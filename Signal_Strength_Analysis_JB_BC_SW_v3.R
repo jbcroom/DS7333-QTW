@@ -277,84 +277,115 @@ sapply(list(predLocsCD_10), CDerror2_10, onlineLocs_CD)
 ### above and distance outputs from the locKNNpoints() output. These weights are multiplied against each k nearest observation, 
 ### respectively, then summed to compute a weighted estimation by distance. These new calculations may allow locations of closer 
 ### distances to be more impactful than those further away, instead of equal weighting amongst the k points.
+#Modify findNN to also output the distances
 
 
-wgtKNNData = function(data, varSignal = cols03, colRem = cols02,sampleAngle = FALSE, refs = seq(0, 315, by = 45)) {
-  set.seed(seed = seed)
-  byLocation =
-  with(data, by(data, list(posXY), function(x) {
-    if (sampleAngle) { # conditional statement added for cross-validation
-    x = x[x$angle == sample(refs, size = 1), ]}
-    ans = x[1, colRem]
-    avgSS = tapply(x[ , varSignal ], x$mac, mean)
-    y = matrix(avgSS, nrow = 1, ncol = 6,
-    dimnames = list(ans$posXY,
-    names(avgSS)))
-    cbind(ans, y)}))
-  adjustDataRes = do.call("rbind", byLocation)
-  return(adjustDataRes)
-  
-  colRem = cols10
-}
-
-### C0
-onlineCVSummary = wgtKNNData(offline, colRem = cols10, sampleAngle = TRUE)
-
-### CD
-onlineCVSummary2 = wgtKNNData(offline2, colRem = cols10, sampleAngle = TRUE)
-
-
-### Include distances within KNN function foor weighted calc
-locKNNpoints = function(signalData, trainSubset) {
-  diffs = apply(trainSubset[ , 4:9], 1, function(x) x - signalData)
-  dists = apply(diffs, 2, function(x) sqrt(sum(x^2)) )
-  closest = order(dists)
-  return(list(trainSubset[closest, 1:3 ],dists[order(dists)]))}
-
-#Modify locKNNpoints to utilize distance output for estimation efforts
-knnPredict = function(signalData, newAngles, trainData, numAngles = 1, k = 3){
-  closeXY = list(length = nrow(signalData))
-  closeDist = list(length = nrow(signalData))
-  for (i in 1:nrow(signalData)) {
-    trainSS = adjustAngle(newAngles[i], trainData, m = numAngles)
-    fnnResult =
-    locKNNpoints(signalData = as.numeric(signalData[i, ]), trainSS)
-    closeXY[[i]] = fnnResult[[1]]
-    closeDist[[i]] = fnnResult[[2]]}
-  distWeight = list(length = length(closeDist))
-  for (i in 1:length(closeDist)){
-    distW = list(length = k)
-    for (j in 1:k){
-      distW[j] = (1/closeDist[[i]][j])/sum(1/closeDist[[i]][1:k])}
-    distWeight[[i]] =  distW}
-  estXYDetails = list(length=length(closeXY))
-  for(i in 1:length(closeXY)){
-    estXYDetails[[i]] = as.matrix(closeXY[[i]][1:k,2:3]) * unlist(distWeight[[i]])}
-  
-  estXY = lapply(estXYDetails,function(x) apply(x, 2,function(x) sum(x)))
-  estXY = do.call("rbind", estXY)
-  return(estXY)}
-
-
-
-C0error5 = function(predLocs5, onlineLocs_C0) sum(rowSums((predLocs5 - onlineLocs_C0)^2)) 
-C0error7 = function(predLocs7, onlineLocs_C0) sum(rowSums((predLocs7 - onlineLocs_C0)^2)) 
-
-
-
-set.seed(seed = seed)
-K = 20
 v = 11
-
 permuteLocs = sample(unique(offlineSummary$posXY))
 permuteLocs = matrix(permuteLocs, ncol = v, 
                      nrow = floor(length(permuteLocs)/v))
 
+
+
 onlineFold = subset(offlineSummary, posXY %in% permuteLocs[ , 1])
+head(onlineFold)
 onlineFold.ul <- nrow(unique(onlineFold[,2:3]))
 
 
+### Previously we structured and summarized the offline data into six signal strength columns, one for each access point.  
+### We will do the same with our cross-validated test data. However, because it is easier to structure the test data in its complete 
+### form from offline data which is then divided into our desired folds, we now need to modify the reshapeSS() function as follows.
 
+seed = 101
+reshapeSS = function(data, varSignal = "signal", 
+                     keepVars = c("posXY", "posX","posY"),
+                     sampleAngle = FALSE, 
+                     refs = seq(0, 315, by = 45)) {
+  
+  set.seed(seed = seed)
+  
+  byLocation =
+    with(data, by(data, list(posXY), 
+                  function(x) {
+                    if (sampleAngle) { # conditional statement added for cross-validation
+                      x = x[x$angle == sample(refs, size = 1), ]}
+                    ans = x[1, keepVars]
+                    avgSS = tapply(x[ , varSignal ], x$mac, mean)
+                    y = matrix(avgSS, nrow = 1, ncol = 6,
+                               dimnames = list(ans$posXY,
+                                               names(avgSS)))
+                    cbind(ans, y)
+                  }))
+  newDataSS = do.call("rbind", byLocation)
+  return(newDataSS)
+  
+  keepVars = c("posXY", "posX","posY", "orientation", "angle")
+}
+
+
+
+KeepVars = c("posXY", "posX","posY", "orientation", "angle")
+
+onlineCVSummary = reshapeSS(offline, keepVars = keepVars,sampleAngle = TRUE)
+onlineCVSummary2 = reshapeSS(offline2, keepVars = keepVars,sampleAngle = TRUE)
+
+
+
+
+
+
+
+findNN = function(newSignal, trainSubset) {
+  diffs = apply(trainSubset[ , 4:9], 1, 
+                function(x) x - newSignal)
+  dists = apply(diffs, 2, function(x) sqrt(sum(x^2)) )
+  closest = order(dists)
+  return(list(trainSubset[closest, 1:3 ],dists[order(dists)]))
+}
+#Modify findNN to utilize distance output for estimation efforts
+predXY = function(newSignals, newAngles, trainData, 
+                  numAngles = 1, k = 3){
+  
+  closeXY = list(length = nrow(newSignals))
+  closeDist = list(length = nrow(newSignals))
+  
+  for (i in 1:nrow(newSignals)) {
+    trainSS = selectTrain(newAngles[i], trainData, m = numAngles)
+    fnnResult =
+      findNN(newSignal = as.numeric(newSignals[i, ]), trainSS)
+    
+    closeXY[[i]] = fnnResult[[1]]
+    closeDist[[i]] = fnnResult[[2]]
+  }
+  
+  
+  distWeight = list(length = length(closeDist))
+  
+  for (i in 1:length(closeDist)){
+    distW = list(length = k)
+    for (j in 1:k){
+      distW[j] = (1/closeDist[[i]][j])/sum(1/closeDist[[i]][1:k])
+    }
+    
+    distWeight[[i]] =  distW
+  }
+  estXYDetails = list(length=length(closeXY))
+  
+  for(i in 1:length(closeXY)){
+    estXYDetails[[i]] = as.matrix(closeXY[[i]][1:k,2:3]) * unlist(distWeight[[i]])
+  }
+  
+  estXY = lapply(estXYDetails,
+                 function(x) apply(x, 2,
+                                   function(x) sum(x)))
+  
+  estXY = do.call("rbind", estXY)
+  return(estXY)
+}
+
+
+set.seed(seed = seed)
+K = 20
 err = rep(0, K)
 for (j in 1:v) {
   onlineFold = subset(onlineCVSummary2, 
@@ -363,7 +394,7 @@ for (j in 1:v) {
                        posXY %in% permuteLocs[ , -j])
   actualFold = onlineFold[ , c("posX", "posY")]
   for (k in 1:K) {
-    estFold = knnPredict(signalData = onlineFold[ , 6:11],
+    estFold = predXY(newSignals = onlineFold[ , 6:11],
                      newAngles = onlineFold[ , 4], 
                      offlineFold, numAngles = 3, k = k)
     err[k] = err[k] + calcError(estFold, actualFold)
@@ -394,15 +425,16 @@ text(x = kMin2 - 2, y = rmseMin + 40,
 ### Plotting error values for 20 distinct k test iterations, we see that k=8 produces optimal results.
 
 
-
-
-
-
-
 set.seed(seed = seed)
-estXYk8 = knnPredict(signalData = onlineSummary2[ , 6:11], newAngles = onlineSummary2[ , 4], offlineSummary2, numAngles = 3, k =8)
-CDerror8 = function(predLocs1, onlineSummary2) sum(rowSums((predLocs1 - onlineSummary2)^2)) 
-SSE.k8 <- CDerror8(estXYk8, onlineLocs_CD)
+estXYk8 = predXY(newSignals = onlineSummary2[ , 6:11], 
+                 newAngles = onlineSummary2[ , 4], 
+                 offlineSummary2, numAngles = 3, k =kMin2)
+SSE.k8 <- calcError(estXYk8, actualXY_2)
 SSE.k8
+
+
+
+floorErrorMap(estXYk8, onlineSummary[ , c("posX","posY")], 
+              trainPoints = trainPoints, AP = AP)
 
 
