@@ -159,17 +159,7 @@ onlineSummaryAll = do.call("rbind", Loc)
 
 
 
-
-
-#### EDA
-
-
-
-
-
 ## K-Nearest Neighbors Analysis
-
-
 
 ### Angle orientation adjustments before KNN
 adjustData = function(data, varSignal = cols03, cols = cols02) {
