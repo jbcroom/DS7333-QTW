@@ -11,6 +11,7 @@
 
 # Define the MAC IDs of the relevant routers/access points
 fileLoc = "F:/SMU/DS7333/Project1/offline.final.trace.txt"
+fileLoc2 = "F:/SMU/DS7333/Project1/online.final.trace.txt"
 macsC0 = c('00:0f:a3:39:e1:c0', '00:14:bf:b1:97:90', '00:14:bf:3b:c7:c6','00:14:bf:b1:97:81', '00:14:bf:b1:97:8a', '00:14:bf:b1:97:8d') #C0
 macsCD = c('00:0f:a3:39:dd:cd', '00:14:bf:b1:97:90', '00:14:bf:3b:c7:c6','00:14:bf:b1:97:81', '00:14:bf:b1:97:8a', '00:14:bf:b1:97:8d') #CD
 macsC0_CD = c('00:0f:a3:39:e1:c0', '00:0f:a3:39:dd:cd', '00:14:bf:b1:97:90','00:14:bf:3b:c7:c6', '00:14:bf:b1:97:8a', '00:14:bf:b1:97:8d') # C0 & CD
@@ -122,7 +123,7 @@ signalSummaryall =
 offlineSummaryall = do.call("rbind", signalSummaryall)
 
 # With C0 without CD
-online <- readData(filename = fileLoc, macs=macsC0)  
+online <- readData(filename = fileLoc2, macs=macsC0)  
 online$posXY = paste(online$posX, online$posY, sep = sepValue)
 
 Loc = with(online, by(online, list(posXY), function(x) { 
@@ -133,7 +134,7 @@ Loc = with(online, by(online, list(posXY), function(x) {
 onlineSummary = do.call("rbind", Loc)
 
 # With CD without C0
-online2 <- readData(filename = fileLoc, macs=macsCD)  
+online2 <- readData(filename = fileLoc2, macs=macsCD)  
 online2$posXY = paste(online2$posX, online2$posY, sep = sepValue)
 
 Loc = with(online2, by(online2, list(posXY), function(x) {
@@ -145,7 +146,7 @@ Loc = with(online2, by(online2, list(posXY), function(x) {
 onlineSummary2 = do.call("rbind", Loc)
 
 # With both CD and C0
-onlineall <- readData(filename = fileLoc , macs=macsC0_CD)  
+onlineall <- readData(filename = fileLoc2, macs=macsC0_CD)  
 onlineall$posXY = paste(onlineall$posX, onlineall$posY, sep = sepValue)
 
 Loc = with(onlineall, by(onlineall, list(posXY), function(x) {
