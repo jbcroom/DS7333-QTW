@@ -1,0 +1,5 @@
+---
+title: "MSDS 7333 Fall 2020: Case Study 6"
+author: "Jayson Barker, Brandon Croom, Shane Winestock"
+output: html_document
+---

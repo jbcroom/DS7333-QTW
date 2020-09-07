@@ -227,7 +227,7 @@ summary.default(offlineSummaryall)
 In preparation for data modeling, the data has also been flattened to create a dataframe with a single positional entry (X, Y coordinate) for each MAC address. This will help to reduce the analysis record count down to approximately 1328 points per MAC address. this breakdown is shown below:
 
 
-```{r}
+```{r, echo=FALSE}
 head(offlineSummaryall)
 
 aggregate(cbind(count = mac) ~ mac, 
@@ -238,7 +238,7 @@ Building the dataframes as described above with flattened data and dataframes co
 
 # Access Point Analysis
 
-One of the analysis points that must be determined is whether to use the MAC address ending with C0 only, the MAC address ending in CD only, or to keep both in our data set. In order to determine which approach to take, the KNN methodolody will be executed on all three configurations. Using this information it can be determined which configuration will be used. The elbow plots shown below will assist in this determination
+One of the analysis points that must be determined is whether to use the MAC address ending with C0 only, the MAC address ending in CD only, or to keep both in our data set. In order to determine which approach to take, the KNN methodology will be executed on all three configurations. Using this information it can be determined which data configuration will be used based on the error rates output by executing KNN. For each data configuration k will be selected from 1 through 20. This is an arbitrary selection but should provide enough data points to make an analysis. The elbow plots shown below will assist in this determination of which data configuration works best. 
 ```{r,echo=FALSE}
 ## K-Nearest Neighbors Analysis
 
@@ -288,65 +288,14 @@ knnPredict = function(signalData, newAngles, trainData,numAngles = 1, k = 3){clo
     estXY = do.call("rbind", estXY)
   return(estXY)}
 ```
-``` {r, echo=FALSE}
-
-#Original Code with hard coded K's
-### C0 KNN Scoring
-onlineLocs_C0 = onlineSummary[ , cols04]
-### K = 1 - baseline
-predLocs1 = knnPredict(signalData = onlineSummary[ , 6:11], newAngles = onlineSummary[ , 4], offlineSummary, numAngles = 3, k = 1)
-C0error1 = function(predLocs1, onlineLocs_C0) sum(rowSums((predLocs1 - onlineLocs_C0)^2)) 
-sapply(list(predLocs1), C0error1, onlineLocs_C0)
-### K = 3
-predLocs3 = knnPredict(signalData = onlineSummary[ , 6:11], newAngles = onlineSummary[ , 4], offlineSummary, numAngles = 3, k = 3)
-C0error3 = function(predLocs3, onlineLocs_C0) sum(rowSums((predLocs3 - onlineLocs_C0)^2)) 
-sapply(list(predLocs3), C0error3, onlineLocs_C0)
-### K = 5
-predLocs5 = knnPredict(signalData = onlineSummary[ , 6:11], newAngles = onlineSummary[ , 4], offlineSummary, numAngles = 3, k = 5)
-C0error5 = function(predLocs5, onlineLocs_C0) sum(rowSums((predLocs5 - onlineLocs_C0)^2)) 
-sapply(list(predLocs5), C0error5, onlineLocs_C0)
-### K = 7
-predLocs7 = knnPredict(signalData = onlineSummary[ , 6:11], newAngles = onlineSummary[ , 4], offlineSummary, numAngles = 3, k = 7)
-C0error7 = function(predLocs7, onlineLocs_C0) sum(rowSums((predLocs7 - onlineLocs_C0)^2)) 
-sapply(list(predLocs7), C0error7, onlineLocs_C0)
-### K = 10
-predLocs10 = knnPredict(signalData = onlineSummary[ , 6:11], newAngles = onlineSummary[ , 4], offlineSummary, numAngles = 3, k = 10)
-C0error10 = function(predLocs10, onlineLocs_C0) sum(rowSums((predLocs10 - onlineLocs_C0)^2)) 
-sapply(list(predLocs10), C0error10, onlineLocs_C0)
-# Optimal K = 7 for C0 - 273.6
-
-### CD KNN Scoring
-onlineLocs_CD = onlineSummary2[ , cols04]
-### K = 1 - baseline
-predLocsCD_1 = knnPredict(signalData = onlineSummary2[ , 6:11], newAngles = onlineSummary2[ , 4], offlineSummary2, numAngles = 3, k = 1)
-CDerror2_1 = function(predLocsCD_1, onlineLocs_CD) sum(rowSums((predLocsCD_1 - onlineLocs_CD)^2))
-sapply(list(predLocsCD_1), CDerror2_1, onlineLocs_CD)
-### K = 3
-predLocsCD_3 = knnPredict(signalData = onlineSummary2[ , 6:11], newAngles = onlineSummary2[ , 4], offlineSummary2, numAngles = 3, k = 3)
-CDerror2_3 = function(predLocsCD_3, onlineLocs_CD) sum(rowSums((predLocsCD_3 - onlineLocs_CD)^2))
-sapply(list(predLocsCD_3), CDerror2_3, onlineLocs_CD)
-### K = 5
-predLocsCD_5 = knnPredict(signalData = onlineSummary2[ , 6:11], newAngles = onlineSummary2[ , 4], offlineSummary2, numAngles = 3, k = 5)
-CDerror2_5 = function(predLocsCD_5, onlineLocs_CD) sum(rowSums((predLocsCD_5 - onlineLocs_CD)^2))
-sapply(list(predLocsCD_5), CDerror2_5, onlineLocs_CD)
-### K = 7
-predLocsCD_7 = knnPredict(signalData = onlineSummary2[ , 6:11], newAngles = onlineSummary2[ , 4], offlineSummary2, numAngles = 3, k = 7)
-CDerror2_7 = function(predLocsCD_7, onlineLocs_CD) sum(rowSums((predLocsCD_7 - onlineLocs_CD)^2))
-sapply(list(predLocsCD_7), CDerror2_7, onlineLocs_CD)
-### K = 10
-predLocsCD_10 = knnPredict(signalData = onlineSummary2[ , 6:11], newAngles = onlineSummary2[ , 4], offlineSummary2, numAngles = 3, k = 10)
-CDerror2_10 = function(predLocsCD_10, onlineLocs_CD) sum(rowSums((predLocsCD_10 - onlineLocs_CD)^2))
-sapply(list(predLocsCD_10), CDerror2_10, onlineLocs_CD)
-### Optimal K = 5 for CD - 249.9
-```
 
 ```{r,echo=FALSE}
-### C0 KNN Scoring - BC
+### C0 KNN Scoring - Updated original code to loop for k=1-15 and maintain errors for elbow plotting
 onlineLocs_C0 = onlineSummary[ , cols04]
 wss_C0 <- (nrow(onlineLocs_C0)-1)*sum(apply(onlineLocs_C0,2,var))
 
 
-kMax = 15
+kMax = 20
 
 for (i in 1:kMax){
   predLocs = knnPredict(signalData = onlineSummary[ , 6:11], newAngles = onlineSummary[ , 4], offlineSummary, numAngles = 3, k = i)
@@ -377,7 +326,7 @@ for (i in 1:kMax){
 }
 ```
 
-```{r}
+```{r, echo=FALSE}
 # Plot the elbow curves for all three KNN runs to determine the best K
 plot(1:kMax, wss_C0, type="b", xlab="Number of Clusters",
      ylab="Within groups sum of squares",main="Elbow Curve for KNN", col="blue",pch="o")
@@ -390,9 +339,9 @@ legend("topright",legend=c("C0","CD","COCD"), col=c("blue","red","black"),
 
 ```
 
-Viewingig the combined elbow plot above it can be seen that for the CD configuration a k=5 looks to be about the optimal solution. For C0, k=7 looks to be optimal. From the combined graph, it's difficult to tell what the optimal K for COCD should be. Evaluating the plots individually may assist.
+Viewing the combined elbow plot above it can be seen that for the CD configuration a k=4 looks to be about the optimal solution. For C0, k=8 looks to be optimal. From the combined graph, it's difficult to tell what the optimal K for COCD should be. Evaluating the plots individually may assist.
 
-```{r}
+```{r, echo=FALSE}
 plot(1:kMax, wss_C0, type="b", xlab="Number of Clusters",
      ylab="Within groups sum of squares",main="Elbow Curve for C0 Only KNN", col="blue",pch="o")
 
@@ -404,26 +353,212 @@ plot(1:kMax, wss_C0CD, type="b", xlab="Number of Clusters",
 ```
 Evaluating the individual graphs reaffirms the values for C0 and CD as standalone cases. The combined case gives a k=7 that looks to be optimal. Lets now look at the individual errors at these k values to determine which best meets the analysis needs.
 
+
 ```{r, echo=FALSE}
-predLocs7 = knnPredict(signalData = onlineSummary[ , 6:11], newAngles = onlineSummary[ , 4], offlineSummary, numAngles = 3, k = 7)
-C0error7 = function(predLocs7, onlineLocs_C0) sum(rowSums((predLocs7 - onlineLocs_C0)^2)) 
-COKNNError = sapply(list(predLocs10), C0error7, onlineLocs_C0)
+sprintf("CO KNN Error at K=5: %f", wss_C0[8])
+sprintf("CD KNN Error at K=4: %f", wss_CD[4])
+sprintf("COCD KNN Error at K=7: %f", wss_C0CD[7])
+```
+From the output above it can be seen that the combination with CO and CD has the highest error. This would lead to not keeping both values in the mix. Give CD by itself has the lowest error this seems the most likely option to address. 
 
-predLocs = knnPredict(signalData = onlineSummary2[ , 6:11], newAngles = onlineSummary2[ , 4], offlineSummary2, numAngles = 3, k = 5)
-CDerror = function(predLocs, onlineLocs_CD) sum(rowSums((predLocs - onlineLocs_CD)^2)) 
-CDKNNError = sapply(list(predLocs), CDerror, onlineLocs_CD)
+# Weighted KNN
 
-predLocs = knnPredict(signalData = onlineSummaryAll[ , 6:11], newAngles = onlineSummaryAll[ , 4], offlineSummaryall, numAngles = 3, k = 7)
-C0error = function(predLocs, onlineLocs_C0CD) sum(rowSums((predLocs - onlineLocs_C0CD)^2)) 
-COCDKNNError = sapply(list(predLocs), C0error, onlineLocs_C0CD)
+```{r, echo=FALSE}
+#### KNN Distance Weighting
+
+### To further improve the accuracy of predicting location, we up-weight stronger signals relative to weaker signals. 
+### This allows us to give strong, closer signals a larger impact on determining the location than those that are weak and further away. 
+### We use the weighting fraction below to achieve this result, where we use the signal strength as an estimator for distance.
+
+### The locKNNpoints() function below has been modified from the previous version to also output the distance metrics utilized in 
+### determining the "closest" k points. Additionally, the knnPredict() function has been modified to compute weights with the formula 
+### above and distance outputs from the locKNNpoints() output. These weights are multiplied against each k nearest observation, 
+### respectively, then summed to compute a weighted estimation by distance. These new calculations may allow locations of closer 
+### distances to be more impactful than those further away, instead of equal weighting amongst the k points.
+#Modify findNN to also output the distances
+
+
+v = 11
+permuteLocs = sample(unique(offlineSummary$posXY))
+permuteLocs = matrix(permuteLocs, ncol = v, 
+                     nrow = floor(length(permuteLocs)/v))
+
+
+
+onlineFold = subset(offlineSummary, posXY %in% permuteLocs[ , 1])
+head(onlineFold)
+onlineFold.ul <- nrow(unique(onlineFold[,2:3]))
+
+
+### Previously we structured and summarized the offline data into six signal strength columns, one for each access point.  
+### We will do the same with our cross-validated test data. However, because it is easier to structure the test data in its complete 
+### form from offline data which is then divided into our desired folds, we now need to modify the reshapeSS() function as follows.
+
+seed = 101
+reshapeSS = function(data, varSignal = "signal", 
+                     keepVars = c("posXY", "posX","posY"),
+                     sampleAngle = FALSE, 
+                     refs = seq(0, 315, by = 45)) {
+  
+  set.seed(seed = seed)
+  
+  byLocation =
+    with(data, by(data, list(posXY), 
+                  function(x) {
+                    if (sampleAngle) { # conditional statement added for cross-validation
+                      x = x[x$angle == sample(refs, size = 1), ]}
+                    ans = x[1, keepVars]
+                    avgSS = tapply(x[ , varSignal ], x$mac, mean)
+                    y = matrix(avgSS, nrow = 1, ncol = 6,
+                               dimnames = list(ans$posXY,
+                                               names(avgSS)))
+                    cbind(ans, y)
+                  }))
+  newDataSS = do.call("rbind", byLocation)
+  return(newDataSS)
+  
+  keepVars = c("posXY", "posX","posY", "orientation", "angle")
+}
+
+
+KeepVars = c("posXY", "posX","posY", "orientation", "angle")
+
+onlineCVSummary = reshapeSS(offline, keepVars = keepVars,sampleAngle = TRUE)
+onlineCVSummary2 = reshapeSS(offline2, keepVars = keepVars,sampleAngle = TRUE)
+
+
+findNN = function(newSignal, trainSubset) {
+  diffs = apply(trainSubset[ , 4:9], 1, 
+                function(x) x - newSignal)
+  dists = apply(diffs, 2, function(x) sqrt(sum(x^2)) )
+  closest = order(dists)
+  return(list(trainSubset[closest, 1:3 ],dists[order(dists)]))
+}
+
+#Modify findNN to utilize distance output for estimation efforts
+predXY = function(newSignals, newAngles, trainData, 
+                  numAngles = 1, k = 3){
+  
+  closeXY = list(length = nrow(newSignals))
+  closeDist = list(length = nrow(newSignals))
+  
+  for (i in 1:nrow(newSignals)) {
+    trainSS = selectTrain(newAngles[i], trainData, m = numAngles)
+    fnnResult =
+      findNN(newSignal = as.numeric(newSignals[i, ]), trainSS)
+    
+    closeXY[[i]] = fnnResult[[1]]
+    closeDist[[i]] = fnnResult[[2]]
+  }
+  
+  
+  distWeight = list(length = length(closeDist))
+  
+  for (i in 1:length(closeDist)){
+    distW = list(length = k)
+    for (j in 1:k){
+      distW[j] = (1/closeDist[[i]][j])/sum(1/closeDist[[i]][1:k])
+    }
+    
+    distWeight[[i]] =  distW
+  }
+  estXYDetails = list(length=length(closeXY))
+  
+  for(i in 1:length(closeXY)){
+    estXYDetails[[i]] = as.matrix(closeXY[[i]][1:k,2:3]) * unlist(distWeight[[i]])
+  }
+  
+  estXY = lapply(estXYDetails,
+                 function(x) apply(x, 2,
+                                   function(x) sum(x)))
+  
+  estXY = do.call("rbind", estXY)
+  return(estXY)
+}
+
+
+set.seed(seed = seed)
+K = 20
+err = rep(0, K)
+for (j in 1:v) {
+  onlineFold = subset(onlineCVSummary2, 
+                      posXY %in% permuteLocs[ , j])
+  offlineFold = subset(offlineSummary2,
+                       posXY %in% permuteLocs[ , -j])
+  actualFold = onlineFold[ , c("posX", "posY")]
+  for (k in 1:K) {
+    estFold = predXY(newSignals = onlineFold[ , 6:11],
+                     newAngles = onlineFold[ , 4], 
+                     offlineFold, numAngles = 3, k = k)
+    err[k] = err[k] + calcError(estFold, actualFold)
+  }
+}
+
+
+###  will perform similar steps and perform v-fold tests on one to twenty k nearest neighbor estimations to find the optimal value of K with 
+### weighted samples.
+
+set.seed(seed = seed)
+oldPar = par(mar = c(4, 5, 1, 1))
+plot(y = err, x = (1:K),  type = "l", lwd= 2,
+     ylim = c(1000, 2100),
+     xlab = "Number of Neighbors",
+     ylab = "Sum of Square Errors")
+rmseMin = min(err)
+kMin2 = which(err == rmseMin)[1]
+segments(x0 = 0, x1 = kMin2, y0 = rmseMin, col = gray(0.4), 
+         lty = 2, lwd = 2)
+segments(x0 = kMin2, x1 = kMin2, y0 = 900,  y1 = rmseMin, 
+         col = grey(0.4), lty = 2, lwd = 2)
+mtext(kMin2, side = 1, line = 1, at = kMin2, col = grey(0.4))
+text(x = kMin2 - 2, y = rmseMin + 40, 
+     label = as.character(round(rmseMin)), col = grey(0.4))
+
+
+### Plotting error values for 20 distinct k test iterations, we see that k=8 produces optimal results.
+
+actualXY_2 = onlineSummary2[ , c("posX", "posY")]
+AP = matrix( c( 7.5, 6.3, 2.5, -.8, 12.8, -2.8,  
+               1, 14, 33.5, 9.3,  33.5, 2.8),
+            ncol = 2, byrow = TRUE,
+            dimnames = list(macsCD, c("x", "y") ))
+
+trainPoints = offlineSummary[ offlineSummary$angle == 0 & 
+                              offlineSummary$mac == "00:0f:a3:39:dd:cd" ,
+                        c("posX", "posY")]
+oldPar = par(mar = c(1, 1, 1, 1))
+
+set.seed(seed = seed)
+estXYk8 = predXY(newSignals = onlineSummary2[ , 6:11], 
+                 newAngles = onlineSummary2[ , 4], 
+                 offlineSummary2, numAngles = 3, k =kMin2)
+SSE.k8 <- calcError(estXYk8, actualXY_2)
+SSE.k8
+
+floorErrorMap = function(estXY, actualXY, trainPoints = NULL, AP = NULL){
+  
+    plot(0, 0, xlim = c(0, 35), ylim = c(-3, 15), type = "n",
+         xlab = "", ylab = "", axes = FALSE)
+    box()
+    if ( !is.null(AP) ) points(AP, pch = 15)
+    if ( !is.null(trainPoints) )
+      points(trainPoints, pch = 19, col="grey", cex = 0.6)
+    
+    points(x = actualXY[, 1], y = actualXY[, 2], 
+           pch = 19, cex = 0.8 )
+    points(x = estXY[, 1], y = estXY[, 2], 
+           pch = 8, cex = 0.8 )
+    segments(x0 = estXY[, 1], y0 = estXY[, 2],
+             x1 = actualXY[, 1], y1 = actualXY[ , 2],
+             lwd = 2, col = "red")
+}
+
+
+floorErrorMap(estXYk8, onlineSummary[ , c("posX","posY")], 
+              trainPoints = trainPoints, AP = AP)
 
 
 ```
+# Conclusion
 
-```{r}
-sprintf("CO KNN Error at K=7: %f", COKNNError)
-sprintf("CD KNN Error at K=5: %f", CDKNNError)
-sprintf("COCD KNN Error at K=7: %f", COCDKNNError)
-```
-From the above it can be seen that the lowest error is 
    
