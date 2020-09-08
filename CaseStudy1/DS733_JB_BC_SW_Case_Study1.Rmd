@@ -1,6 +1,7 @@
 ---
 title: 'MSDS 7333 Fall 2020: Case Study 1'
 author: "Jayson Barker, Brandon Croom, Shane Weinstock"
+date: "9/7/2020"
 output:
   pdf_document: default
   html_document: default
@@ -12,7 +13,8 @@ Organizations measure productivity in various ways depending upon the metrics th
 
 The evaluation of RTLS as it relates to an organization's WiFi usage is one such method to analyze productivity. More specifically, the distribution of various wifi-enabled RTLS devices across a facility may allow clustering methods to be leveraged in order to predict the position of assets based on previous patterns. In this particular evaluation, data were provided for offline and online data across a variety of access points. The building layout, access point configuration, online measurements (black dots), and offline measurements (gray dots) are shown below in Figure 1.
 
-![Figure 1: Building Floorplan](building.png)
+![Building Floorplan](building.png)
+
 In order to perform the analysis k-Nearest Neighbor (KNN) algorithm will be used. KNN is an algorithm that can be used as both a classifier and a regressor. In this analysis KNN will be used as a classifier. In the classifier configuration, KNN attempts to map items that are close to each other together into clusters of other similar items. KNN is a lazy algorithm and large datasets do impact the speed of the KNN results. This algorithm works well in the context being discussed as the access points can be thought of as anchors for the individual clusters and the reader measurements can be grouped to those access points closest to the reader.  
 
 The objectives for this case study are:
@@ -226,7 +228,7 @@ offlineSummaryall | The online dataframe containing both C0 and CD
 
 All of the dataframes have the same structure. For illustrative purposes a view of the offlineSummaryall dataframe showing the available features is below:
 
-```{r}
+```{r, echo=FALSE}
 summary.default(offlineSummaryall)
 ```
 
@@ -375,7 +377,7 @@ In order to make the weighted KNN work as expected our current data structures c
 
 As part of this weighted KNN analysis cross fold validation will also be leveraged. In this particular run 11 fold validation will be leveraged. As with the previous simple KNN calculations k values from 1 to 20 will be leveraged in order to determine the optimal number of neighbors for this analysis. 
 
-```{r, echo=FALSE}
+```{r, echo=FALSE, message=FALSE}
 #### KNN Distance Weighting
 
 ### To further improve the accuracy of predicting location, we up-weight stronger signals relative to weaker signals. 
@@ -429,8 +431,7 @@ reshapeSS = function(data, varSignal = "signal",
   keepVars = c("posXY", "posX","posY", "orientation", "angle")
 }
 
-
-KeepVars = c("posXY", "posX","posY", "orientation", "angle")
+keepVars = c("posXY", "posX","posY", "orientation", "angle")
 
 onlineCVSummary = reshapeSS(offline, keepVars = keepVars,sampleAngle = TRUE)
 onlineCVSummary2 = reshapeSS(offline2, keepVars = keepVars,sampleAngle = TRUE)
@@ -443,6 +444,36 @@ findNN = function(newSignal, trainSubset) {
   closest = order(dists)
   return(list(trainSubset[closest, 1:3 ],dists[order(dists)]))
 }
+
+selectTrain = function(angleNewObs, signals = NULL, m = 1){
+  # m is the number of angles to keep between 1 and 5
+  refs = seq(0, by = 45, length  = 8)
+  nearestAngle = roundOrientation(angleNewObs)
+  
+  if (m %% 2 == 1) 
+    angles = seq(-45 * (m - 1) /2, 45 * (m - 1) /2, length = m)
+  else {
+    m = m + 1
+    angles = seq(-45 * (m - 1) /2, 45 * (m - 1) /2, length = m)
+    if (sign(angleNewObs - nearestAngle) > -1) 
+      angles = angles[ -1 ]
+    else 
+      angles = angles[ -m ]
+  }
+  
+  
+  angles = angles + nearestAngle
+  angles[angles < 0] = angles[ angles < 0 ] + 360
+  angles[angles > 360] = angles[ angles > 360 ] - 360
+  angles = sort(angles) 
+  
+  offlineSubset = signals[ signals$angle %in% angles, ]
+  reshapeSS(offlineSubset, varSignal = "avgSignal")
+}
+
+calcError = 
+function(estXY, actualXY) 
+   sum( rowSums( (estXY - actualXY)^2) )
 
 #Modify findNN to utilize distance output for estimation efforts
 predXY = function(newSignals, newAngles, trainData, 
@@ -544,18 +575,21 @@ estXYk8 = predXY(newSignals = onlineSummary2[ , 6:11],
                  offlineSummary2, numAngles = 3, k =kMin2)
 SSE.k8 <- calcError(estXYk8, actualXY_2)
 ```
+
 The elbow plot above shows that k=8 seems to be the optimal number of neighbors for this weighted KNN evaluation. Furthermore, evaluating the error present at k=8 will allow for comparison between the simple KNN and weighted KNN.
-```{r}
+```{r, echo=FALSE}
 sprintf("CD Weighted KNN Error at K=8: %f", SSE.k8)
 ```
+
 Comparing the weighted KNN error (shown above) for KD and the simple KNN error (shown below) for CD we can see the errors are roughly similar. 
 
-```{r}
+```{r,echo=FALSE}
 sprintf("CD KNN Error at K=4: %f", wss_CD[4])
 ```
+
 The distance calculation for the weighted KNN can also be visualized, as shown below. This visualization allows for determining how the proximity of points is pulled together.
 
-```{r}
+```{r, echo=FALSE}
 floorErrorMap = function(estXY, actualXY, trainPoints = NULL, AP = NULL){
   
     plot(0, 0, xlim = c(0, 35), ylim = c(-3, 15), type = "n",
@@ -576,6 +610,7 @@ floorErrorMap = function(estXY, actualXY, trainPoints = NULL, AP = NULL){
 floorErrorMap(estXYk8, onlineSummary[ , c("posX","posY")], 
               trainPoints = trainPoints, AP = AP)
 ```
+
 # Conclusion
 In conclusion the analysis was able to leverage a simple KNN to evaluate whether to maintain the C0, CD or both MAC addresses. Through the analysis it was determined that CD was the MAC address that should be maintained due to having the least calculated errors. The dataset containing CD was then passed through a weighted KNN model to determine if leveraging the signal strength for location had any impact on the evaluation. The weighted KNN showed that eight neighbors was the optimal number of neighbors for the analysis. The simple KNN version had k=4. Given the smaller number of neighbors in the simple KNN algorithm, the weighted KNN with a higher number of neighbors would be more appropriate to use for further analysis. This larger k and the weights applied based on signal strength provide a more reliable and consistent approach in part due to the larger pool of neighbors which covers a more defined general pool of clusters.
 
