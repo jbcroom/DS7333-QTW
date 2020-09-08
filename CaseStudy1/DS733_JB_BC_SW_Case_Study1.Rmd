@@ -8,21 +8,21 @@ output:
 
 # Business Understanding
 
-Organizations measure productivity in various ways depending upon the metrics they want to track. They may look at shipping times for materials, optimization of workflows within the organization, and any are focused on cost minimization. One such way organizations can help within this optimization is through leveraging real-time location systems (RTLS). Real-time location systems allow organizations to monitory assess and workers through the workflows that exist within the organization. 
+Organizations measure productivity in various ways depending upon the metrics they want to track. They may look at shipping times for materials, optimization of workflows within the organization, and many are focused on cost minimization. One such way organizations can help within this optimization is through leveraging real-time location systems (RTLS). Real-time location systems allow organizations to monitor assets, movement of goods, and workers near real-time through the workflows that exist within the organization. 
 
-The evaluation of RTLS as is relates to an organizations WiFi usage is one such method to analyze productivity. More specifically, the distribution of various wifi-enabled RTLS devices across a facility may allow clustering methods to be leveraged in order to predict the position of assets based on previous patterns. In this particular evaluation data were provided for offline and online data across 6 access points. The building layout, access point configuration, online measurements (black dots), and offline measurements (gray dots) are shown below in Figure 1.
+The evaluation of RTLS as it relates to an organization's WiFi usage is one such method to analyze productivity. More specifically, the distribution of various wifi-enabled RTLS devices across a facility may allow clustering methods to be leveraged in order to predict the position of assets based on previous patterns. In this particular evaluation, data were provided for offline and online data across a variety of access points. The building layout, access point configuration, online measurements (black dots), and offline measurements (gray dots) are shown below in Figure 1.
 
 ![Figure 1: Building Floorplan](building.png)
 
 The objectives for this case study are:
 
 * evaluate the data to determine the optimal access point configuration to include in the data
-* evaluate both a regular unweighted KNN and weighted K-Nearest Neighbor (KNN) methodology to perform predictions
+* evaluate both a regular unweighted KNN and weighted K-Nearest Neighbor (KNN) methodology to perform predictions based on the offline data set to predict locations for the online data set
 
 
 # Data Engineering
 
-In evaluating the data that has been made available it is critical to understand the data file structure. There are two data files to work with: Online.txt and Offline.txt. The Offline.txt file contains information relating to the offline measurements that were taken. The Online.txt file contains information relating to the online measurements that were taken. The Offline.txt file makes up the training dataset while the Online.txt file is the test dataset. Both files are structured with the data fields noted below:
+In evaluating the data that has been made available it is critical to understand the data file structure. There are two data files to work with: online.final.trace.txt and offline.final.trace.txt. The offline file contains information relating to the offline measurements that were taken. The online file contains information relating to the online measurements that were taken. For the purposes of this analysis, the offline file makes up the training dataset while the online file is our test dataset. Both files are structured with the data fields noted below:
 
 Data Field | Data Description
 -----------|-----------------
@@ -30,7 +30,7 @@ Data Field | Data Description
    Id      | Router MAC Address
    Pos     | Router Location (Comma separated positions for x, y, z)
    Degree  | Direction scanning device measured in degrees that was carried by the researcher
-   MAC     | MAC address of either the router, or scanning device combined with corresponding values for signal strength (dBm), the mode in which it was operating(adhoc scanner = 1, access router = 3), and its corresponding channel frequency.
+   MAC     | MAC address of either the router, or scanning device combined with corresponding values for signal strength (dBm), the mode in which it was operating(adhoc scanner = 1, access router = 3), and its corresponding channel frequency
    Signal  | Received Signal Strength in DbM
    
    
@@ -38,11 +38,11 @@ As noted above, the data fields have compressed information into single columns.
 
 In reviewing the data in raw form a few observations were identified:
 
- * The Z position (i.e. elevation) was zero for the data points. This indicates a column that can be dropped for the specific analysis.
- * The scan angles are not consistent and need to be made consistent. Plan to round these to the nearest 45 degree angle,
+ * The Z position (i.e. elevation) was zero for the data points. We will ignore this column in the analysis
+ * The scan angles are not consistent and need to be made consistent. We will round these to the nearest 45 degree angle
  * There are some MAC addresses with only a few data points. A threshold of approximately 1 million will be set. Any MAC addresses with less than this threshold will be removed
  
-In specific relation to this analysis the following features will also be dropped from the dataframe as they do not impact the analysis:
+In  relation to this analysis the following features will also be dropped from the dataset as they do not impact the analysis:
 
  * scanMac - this is the MAC address of the scanner
  * channel - this is the channel where the reading was acquired
@@ -57,7 +57,7 @@ Multiple columns will be created to assist in further analysis
  * posXY - this is a combination of the posX, posY fields into a single value. Coordinates are separated by the '-' character
  * rawTime - this is a raw time value
 
-In addition to the above the angle column was standardized to the nearest 45 degree angle. Due to multiple differences in the angle readings, this standardization is necessary to ensure consistency
+In addition to the above the angle column was standardized to the nearest 45 degree angle. Due to multiple differences in the angle readings, this standardization is necessary to ensure consistency.
 
 For purposes of these analysis these rules were applied to both the online and offline datasets. 
 
@@ -212,7 +212,7 @@ Loc = with(onlineall, by(onlineall, list(posXY), function(x) {
 onlineSummaryAll = do.call("rbind", Loc)
 ```
 
-As part of the analysis the determination of certain access points to keep or remove was needed. Specifically evaluation of whether to individually keep both access points that ended in C0 and CD or to keep only one of these points. This need resulted in three distinct dataframes for each file as follows:
+As part of the analysis the determination of certain access points to keep or remove was needed. Specifically, evaluation of whether to individually keep both access points that ended in C0 and CD or to keep only one of these points. This need resulted in three distinct dataframes for each file as follows:
 
 Dataframe | Description
 -----------|------------
@@ -578,11 +578,11 @@ floorErrorMap(estXYk8, onlineSummary[ , c("posX","posY")],
 # Conclusion
 In conclusion the analysis was able to leverage a simple KNN to evaluate whether to maintain the C0, CD or both MAC addresses. Through the analysis it was determined that CD was the MAC address that should be maintained due to having the least calculated errors. The dataset containing CD was then passed through a weighted KNN model to determine if leveraging the signal strength for location had any impact on the evaluation. The weighted KNN showed that eight neighbors was the optimal number of neighbors for the analysis. 
 
-Using the KNN methodology (simple or weighted) does have some drawbacks when applied to RTLS. Speed in one predominant factor that comes into play. KNN is not speedy and in this particular instance it was required to aggregate the data on angle of orientation to obtain a speed boost for processing. The speed boost was necessary to make this analysis work however for true real time analysis this may not be enough for real time tracking. 
+Using the KNN methodology (simple or weighted) does have some drawbacks when applied to RTLS. Speed is one predominant factor that comes into play. KNN is not speedy and in this particular instance it was required to aggregate the data on angle of orientation to obtain a speed boost for processing. The speed boost was necessary to make this analysis work however for true real time analysis this may not be enough for real time tracking. 
 
 The angles provided in the data were not overly useful for the KNN method. Given that the devices were always held at multiple angles based on user preference. Having this information did not add any value as the main goal was to determine location. The angle may be more applicable if the analysis was over multiple floors and elevation came into play. 
 
-In order to overcome some of these perceived drawbacks a few options could be implemented. Caching of the training data at the angle sweeps to prevent recreation of data would dramatically help improve processing speed. Increasing the size of the testing test by including the cached angle information would allow for the creation of many kNN models and then select the one that best met the needs. This would help improve both speed an accuracy. 
+In order to overcome some of these perceived drawbacks a few options could be implemented. Caching of the training data at the angle sweeps to prevent re-creation of data would dramatically help improve processing speed. Increasing the size of the testing test by including the cached angle information would allow for the creation of many kNN models and then select the one that best met the needs. This would help improve both speed an accuracy. 
 
 Varying the number of angles included in the training aggregation would also be an interesting analysis to perform. In the current analysis angles were managed in 45 degree increments. An argument could be made that including all available angles would be ideal to prevent "data loss", however there could be a performance impact leveraging this approach. 
    
