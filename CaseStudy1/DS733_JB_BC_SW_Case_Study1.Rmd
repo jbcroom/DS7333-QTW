@@ -20,7 +20,7 @@ In order to perform the analysis k-Nearest Neighbor (KNN) algorithm will be used
 The objectives for this case study are:
 
 * evaluate the observed data to determine the optimal access point configuration to include in the data
-* evaluate both a regular unweighted KNN and weighted K-Nearest Neighbor (KNN) methodology to perform predictions based on the offline data set to predict locations for the online data set, and evaluate which method performs better
+* evaluate both a regular unweighted KNN and weighted KNN methodology to perform predictions based on the offline data set to predict locations for the online data set, and evaluate which method performs better
 
 
 # Data Engineering
