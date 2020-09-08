@@ -1,7 +1,9 @@
 ---
-title: "MSDS 7333 Fall 2020: Case Study 1"
-author: "Jayson Barker, Brandon Croom, Shane Winestock"
-output: html_document
+title: 'MSDS 7333 Fall 2020: Case Study 1'
+author: "Jayson Barker, Brandon Croom, Shane Weinstock"
+output:
+  pdf_document: default
+  html_document: default
 ---
 
 # Business Understanding
@@ -15,12 +17,12 @@ The evaluation of RTLS as is relates to an organizations WiFi usage is one such 
 The objectives for this case study are:
 
 * evaluate the data to determine the optimal access point configuration to include in the data
-* evaluate both a regular unweighted KNN and weighted KNN methodology to perform predictions
+* evaluate both a regular unweighted KNN and weighted K-Nearest Neighbor (KNN) methodology to perform predictions
 
 
 # Data Engineering
 
-In evaluating the data that has been made available it is critical to understand the data file structure. There are two data files to work with: Online.txt and Offline.txt. The Offline.txt file contains information relating to the offline measurements that were taken. The Online.txt file contains information relating to the online measurements that were taken. The Offline.txt file makes up the training data set while the Online.txt file is the test data set. Both files are structured with the data fields noted below:
+In evaluating the data that has been made available it is critical to understand the data file structure. There are two data files to work with: Online.txt and Offline.txt. The Offline.txt file contains information relating to the offline measurements that were taken. The Online.txt file contains information relating to the online measurements that were taken. The Offline.txt file makes up the training dataset while the Online.txt file is the test dataset. Both files are structured with the data fields noted below:
 
 Data Field | Data Description
 -----------|-----------------
@@ -32,7 +34,7 @@ Data Field | Data Description
    Signal  | Received Signal Strength in DbM
    
    
-As noted above, the data fields have compressed information into single columns. For example, the Pos column contains information for X,Y, and Z coordinates in comma delimited format instead of being broken out into individual fields. The same is true for the MAC column. The MAC column contains information on the router MAC address, signal strength, operating mode and channel. In order to handle all of this information data frames were constructed for both the online and offline data sets. Each field was split out into a column within the data frame in order to make analysis much easier. 
+As noted above, the data fields have compressed information into single columns. For example, the Pos column contains information for X,Y, and Z coordinates in comma delimited format instead of being broken out into individual fields. The same is true for the MAC column. The MAC column contains information on the router MAC address, signal strength, operating mode and channel. In order to handle all of this information dataframes were constructed for both the online and offline datasets. Each field was split out into a column within the dataframe in order to make analysis much easier. 
 
 In reviewing the data in raw form a few observations were identified:
 
@@ -43,7 +45,7 @@ In reviewing the data in raw form a few observations were identified:
 In specific relation to this analysis the following features will also be dropped from the dataframe as they do not impact the analysis:
 
  * scanMac - this is the MAC address of the scanner
- * channel - this is the channel the data was read on
+ * channel - this is the channel where the reading was acquired
  * type - this is the device type
  
 Multiple columns will be created to assist in further analysis
@@ -52,12 +54,15 @@ Multiple columns will be created to assist in further analysis
  * avgSignal - this will be the average signal strength captured
  * sdSignal - this will be the standard deviation of the captured signal strength
  * iqrSignal - this is the interquartile range of the captured signal strength
- * posXY - this is a combintion of the posX, posY fields into a single value. Coordinates are separated by the '-' character
+ * posXY - this is a combination of the posX, posY fields into a single value. Coordinates are separated by the '-' character
  * rawTime - this is a raw time value
 
-For purposes of these analysis these rules were applied to both the online and offline data sets. 
+In addition to the above the angle column was standardized to the nearest 45 degree angle. Due to multiple differences in the angle readings, this standardization is necessary to ensure consistency
+
+For purposes of these analysis these rules were applied to both the online and offline datasets. 
 
 ```{r,echo=FALSE}
+# NOTE: Code portions leveraged from the course provided code in certain instances. 
 # Define the MAC IDs of the relevant routers/access points
 fileLoc = "C:\\RAI\\DS7333-QTW\\CaseStudy1\\Data\\offline.final.trace.txt"
 fileLoc2 = "C:\\RAI\\DS7333-QTW\\CaseStudy1\\Data\\online.final.trace.txt"
@@ -209,7 +214,7 @@ onlineSummaryAll = do.call("rbind", Loc)
 
 As part of the analysis the determination of certain access points to keep or remove was needed. Specifically evaluation of whether to individually keep both access points that ended in C0 and CD or to keep only one of these points. This need resulted in three distinct dataframes for each file as follows:
 
-Data Frame | Description
+Dataframe | Description
 -----------|------------
 offlineSummary    | The offline dataframe containing only the C0 access point
 offlineSummary2   | The offline dataframe containing only the CD access point
@@ -238,7 +243,7 @@ Building the dataframes as described above with flattened data and dataframes co
 
 # Access Point Analysis
 
-One of the analysis points that must be determined is whether to use the MAC address ending with C0 only, the MAC address ending in CD only, or to keep both in our data set. In order to determine which approach to take, the KNN methodology will be executed on all three configurations. Using this information it can be determined which data configuration will be used based on the error rates output by executing KNN. For each data configuration k will be selected from 1 through 20. This is an arbitrary selection but should provide enough data points to make an analysis. The elbow plots shown below will assist in this determination of which data configuration works best. 
+One of the analysis points that must be determined is whether to use the MAC address ending with C0 only, the MAC address ending in CD only, or to keep both in our dataset. In order to determine which approach to take, KNN methodology will be executed on all three configurations. Using this information it can be determined which data configuration will be used based on the error rates output by executing KNN. For each data configuration k will be selected from 1 through 20. This is an arbitrary selection but should provide enough data points to make an analysis. Initially the elbow plots for the three scenarios will be graphed together to assist in determining which scenario best fits.
 ```{r,echo=FALSE}
 ## K-Nearest Neighbors Analysis
 
@@ -339,7 +344,7 @@ legend("topright",legend=c("C0","CD","COCD"), col=c("blue","red","black"),
 
 ```
 
-Viewing the combined elbow plot above it can be seen that for the CD configuration a k=4 looks to be about the optimal solution. For C0, k=8 looks to be optimal. From the combined graph, it's difficult to tell what the optimal K for COCD should be. Evaluating the plots individually may assist.
+Viewing the combined elbow plot above it can be seen that for the CD configuration a k=4 looks to be about the optimal solution. For C0, k=8 looks to be optimal. From the combined graph, it's difficult to tell what the optimal K for COCD should be. Evaluating the plots individually will assist in evaluating the scenarios.
 
 ```{r, echo=FALSE}
 plot(1:kMax, wss_C0, type="b", xlab="Number of Clusters",
@@ -351,7 +356,7 @@ plot(1:kMax, wss_CD, type="b", xlab="Number of Clusters",
 plot(1:kMax, wss_C0CD, type="b", xlab="Number of Clusters",
      ylab="Within groups sum of squares",main="Elbow Curve for COCD KNN", col="blue",pch="o")
 ```
-Evaluating the individual graphs reaffirms the values for C0 and CD as standalone cases. The combined case gives a k=7 that looks to be optimal. Lets now look at the individual errors at these k values to determine which best meets the analysis needs.
+Evaluating the individual graphs reaffirms the values for C0 and CD as standalone cases; k=8 and k=4 respectively. The combined case gives a k=7 that looks to be optimal. Lets now look at the individual errors at these k values to determine which best meets the analysis needs.
 
 
 ```{r, echo=FALSE}
@@ -359,9 +364,15 @@ sprintf("CO KNN Error at K=5: %f", wss_C0[8])
 sprintf("CD KNN Error at K=4: %f", wss_CD[4])
 sprintf("COCD KNN Error at K=7: %f", wss_C0CD[7])
 ```
-From the output above it can be seen that the combination with CO and CD has the highest error. This would lead to not keeping both values in the mix. Give CD by itself has the lowest error this seems the most likely option to address. 
+From the output above it can be seen that the combination with CO and CD has the highest error. This would lead to not keeping both values in the mix. Given CD by itself has the lowest error this seems the most likely option to address. 
 
 # Weighted KNN
+
+Now that it's been assessed that the dataset with just CD looks to be the best another verification will be performed on this dataset using a weighted KNN. Leveraging a weighted KNN should allow for improving the accuracy of predicting locations. In order to perform the weighting, the signal strength column will be used as the weighting factor. Using this methodology allows for stronger, closer signals to have a larger impact on determining location than those with weaker signals. This is different than the simple KNN used above in that locations of closer distance may now have a larger impact to the neighbor grouping that those that are further away.
+
+In order to make the weighted KNN work as expected our current data structures can be leveraged. The structure of the current dataframes is adequate to support the weighted KNN methodology. Some engineering is required within individual functions as part of the analysis; largely these engineering changes are modifications to compute the weight and output distance values based on the weighting calculations.
+
+As part of this weighted KNN analysis cross fold validation will also be leveraged. In this particular run 11 fold validation will be leveraged. As with the previous simple KNN calculations k values from 1 to 20 will be leveraged in order to determine the optimal number of neighbors for this analysis. 
 
 ```{r, echo=FALSE}
 #### KNN Distance Weighting
@@ -383,10 +394,7 @@ permuteLocs = sample(unique(offlineSummary$posXY))
 permuteLocs = matrix(permuteLocs, ncol = v, 
                      nrow = floor(length(permuteLocs)/v))
 
-
-
 onlineFold = subset(offlineSummary, posXY %in% permuteLocs[ , 1])
-head(onlineFold)
 onlineFold.ul <- nrow(unique(onlineFold[,2:3]))
 
 
@@ -478,7 +486,8 @@ predXY = function(newSignals, newAngles, trainData,
 
 
 set.seed(seed = seed)
-K = 20
+# set K here to kMax defined earlier to keep #K's in sync
+K = kMax
 err = rep(0, K)
 for (j in 1:v) {
   onlineFold = subset(onlineCVSummary2, 
@@ -533,12 +542,23 @@ estXYk8 = predXY(newSignals = onlineSummary2[ , 6:11],
                  newAngles = onlineSummary2[ , 4], 
                  offlineSummary2, numAngles = 3, k =kMin2)
 SSE.k8 <- calcError(estXYk8, actualXY_2)
-SSE.k8
+```
+The elbow plot above shows that k=8 seems to be the optimal number of neighbors for this weighted KNN evaluation. Furthermore, evaluating the error present at k=8 will allow for comparison between the simple KNN and weighted KNN.
+```{r}
+sprintf("CD Weighted KNN Error at K=8: %f", SSE.k8)
+```
+Comparing the weighted KNN error (shown above) for KD and the simple KNN error (shown below) for CD we can see the errors are roughly similar. 
 
+```{r}
+sprintf("CD KNN Error at K=4: %f", wss_CD[4])
+```
+The distance calculation for the weighted KNN can also be visualized, as shown below. This visualization allows for determining how the proximity of points is pulled together.
+
+```{r}
 floorErrorMap = function(estXY, actualXY, trainPoints = NULL, AP = NULL){
   
     plot(0, 0, xlim = c(0, 35), ylim = c(-3, 15), type = "n",
-         xlab = "", ylab = "", axes = FALSE)
+         xlab = "", ylab = "", axes = FALSE, main="Weighted KNN Visualization")
     box()
     if ( !is.null(AP) ) points(AP, pch = 15)
     if ( !is.null(trainPoints) )
@@ -552,13 +572,17 @@ floorErrorMap = function(estXY, actualXY, trainPoints = NULL, AP = NULL){
              x1 = actualXY[, 1], y1 = actualXY[ , 2],
              lwd = 2, col = "red")
 }
-
-
 floorErrorMap(estXYk8, onlineSummary[ , c("posX","posY")], 
               trainPoints = trainPoints, AP = AP)
-
-
 ```
 # Conclusion
+In conclusion the analysis was able to leverage a simple KNN to evaluate whether to maintain the C0, CD or both MAC addresses. Through the analysis it was determined that CD was the MAC address that should be maintained due to having the least calculated errors. The dataset containing CD was then passed through a weighted KNN model to determine if leveraging the signal strength for location had any impact on the evaluation. The weighted KNN showed that eight neighbors was the optimal number of neighbors for the analysis. 
 
+Using the KNN methodology (simple or weighted) does have some drawbacks when applied to RTLS. Speed in one predominant factor that comes into play. KNN is not speedy and in this particular instance it was required to aggregate the data on angle of orientation to obtain a speed boost for processing. The speed boost was necessary to make this analysis work however for true real time analysis this may not be enough for real time tracking. 
+
+The angles provided in the data were not overly useful for the KNN method. Given that the devices were always held at multiple angles based on user preference. Having this information did not add any value as the main goal was to determine location. The angle may be more applicable if the analysis was over multiple floors and elevation came into play. 
+
+In order to overcome some of these perceived drawbacks a few options could be implemented. Caching of the training data at the angle sweeps to prevent recreation of data would dramatically help improve processing speed. Increasing the size of the testing test by including the cached angle information would allow for the creation of many kNN models and then select the one that best met the needs. This would help improve both speed an accuracy. 
+
+Varying the number of angles included in the training aggregation would also be an interesting analysis to perform. In the current analysis angles were managed in 45 degree increments. An argument could be made that including all available angles would be ideal to prevent "data loss", however there could be a performance impact leveraging this approach. 
    
