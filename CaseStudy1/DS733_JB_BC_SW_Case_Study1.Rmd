@@ -9,9 +9,9 @@ output:
 
 # Business Understanding
 
-Organizations measure productivity in various ways depending upon the metrics they want to track. They may look at shipping times for materials, optimization of workflows within the organization, and many are focused on cost minimization. One such way organizations can help within this optimization is through leveraging real-time location systems (RTLS). Real-time location systems allow organizations to monitor assets, movement of goods, and workers near real-time through the workflows that exist within the organization. 
+Organizations measure productivity in various ways depending upon the metrics they want to track. They may look at shipping times for materials, optimization of workflows within the organization, and many are focused on cost minimization. One such way organizations can measure productivity is with the help of real-time location systems (RTLS). Real-time location systems allow organizations to monitor assets, movement of goods, and workers near real-time. 
 
-The evaluation of RTLS as it relates to an organization's WiFi usage is one such method to analyze productivity. More specifically, the distribution of various wifi-enabled RTLS devices across a facility may allow clustering methods to be leveraged in order to predict the position of assets based on previous patterns. In this particular evaluation, data were provided for offline and online data across a variety of access points. The building layout, access point configuration, online measurements (black dots), and offline measurements (gray dots) are shown below in Figure 1.
+The evaluation of RTLS as it relates to an organization's WiFi usage is one such method to analyze productivity. More specifically, the distribution of various wifi-enabled RTLS devices across a facility may allow clustering methods to be leveraged in order to predict the position of assets based on previous observed patterns. In our analysis presented within this document, data were provided for offline and online scenarios across a variety of access points. The building layout, access point configuration, online measurements (black dots), and offline measurements (gray dots) are shown below in Figure 1.
 
 ![Building Floorplan](building.png)
 
@@ -19,8 +19,8 @@ In order to perform the analysis k-Nearest Neighbor (KNN) algorithm will be used
 
 The objectives for this case study are:
 
-* evaluate the data to determine the optimal access point configuration to include in the data
-* evaluate both a regular unweighted KNN and weighted K-Nearest Neighbor (KNN) methodology to perform predictions based on the offline data set to predict locations for the online data set
+* evaluate the observed data to determine the optimal access point configuration to include in the data
+* evaluate both a regular unweighted KNN and weighted K-Nearest Neighbor (KNN) methodology to perform predictions based on the offline data set to predict locations for the online data set, and evaluate which method performs better
 
 
 # Data Engineering
@@ -612,7 +612,7 @@ floorErrorMap(estXYk8, onlineSummary[ , c("posX","posY")],
 ```
 
 # Conclusion
-In conclusion the analysis was able to leverage a simple KNN to evaluate whether to maintain the C0, CD or both MAC addresses. Through the analysis it was determined that CD was the MAC address that should be maintained due to having the least calculated errors. The dataset containing CD was then passed through a weighted KNN model to determine if leveraging the signal strength for location had any impact on the evaluation. The weighted KNN showed that eight neighbors was the optimal number of neighbors for the analysis. The simple KNN version had k=4. Given the smaller number of neighbors in the simple KNN algorithm, the weighted KNN with a higher number of neighbors would be more appropriate to use for further analysis. This larger k and the weights applied based on signal strength provide a more reliable and consistent approach in part due to the larger pool of neighbors which covers a more defined general pool of clusters.
+In conclusion, our analysis was able to leverage a simple KNN to evaluate whether to maintain the C0, CD or both MAC addresses. Through the analysis it was determined that CD was the MAC address that should be maintained due to having the least calculated errors. The dataset containing CD was then passed through a weighted KNN model to determine if leveraging the signal strength for location had any impact on the evaluation. The weighted KNN showed that eight neighbors was the optimal number of neighbors for the analysis. The simple KNN version had k=4. Given the smaller number of neighbors in the simple KNN algorithm, the weighted KNN with a higher number of neighbors would be more appropriate to use for further analysis. This larger k and the weights applied based on signal strength provide a more reliable and consistent approach in part due to the larger pool of neighbors which covers a more defined general pool of clusters to aid in prediction.
 
 Using the KNN methodology (simple or weighted) does have some drawbacks when applied to RTLS. Speed is one predominant factor that comes into play. KNN is not speedy and in this particular instance it was required to aggregate the data on angle of orientation to obtain a speed boost for processing. The speed boost was necessary to make this analysis work however for true real time analysis this may not be enough for real time tracking. 
 
