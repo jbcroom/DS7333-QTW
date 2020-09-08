@@ -13,6 +13,7 @@ Organizations measure productivity in various ways depending upon the metrics th
 The evaluation of RTLS as it relates to an organization's WiFi usage is one such method to analyze productivity. More specifically, the distribution of various wifi-enabled RTLS devices across a facility may allow clustering methods to be leveraged in order to predict the position of assets based on previous patterns. In this particular evaluation, data were provided for offline and online data across a variety of access points. The building layout, access point configuration, online measurements (black dots), and offline measurements (gray dots) are shown below in Figure 1.
 
 ![Figure 1: Building Floorplan](building.png)
+In order to perform the analysis k-Nearest Neighbor (KNN) algorithm will be used. KNN is an algorithm that can be used as both a classifier and a regressor. In this analysis KNN will be used as a classifier. In the classifier configuration, KNN attempts to map items that are close to each other together into clusters of other similar items. KNN is a lazy algorithm and large datasets do impact the speed of the KNN results. This algorithm works well in the context being discussed as the access points can be thought of as anchors for the individual clusters and the reader measurements can be grouped to those access points closest to the reader.  
 
 The objectives for this case study are:
 
@@ -59,7 +60,7 @@ Multiple columns will be created to assist in further analysis
 
 In addition to the above the angle column was standardized to the nearest 45 degree angle. Due to multiple differences in the angle readings, this standardization is necessary to ensure consistency.
 
-For purposes of these analysis these rules were applied to both the online and offline datasets. 
+For purposes of this analysis these rules were applied to both the online and offline datasets. 
 
 ```{r,echo=FALSE}
 # NOTE: Code portions leveraged from the course provided code in certain instances. 
@@ -576,7 +577,7 @@ floorErrorMap(estXYk8, onlineSummary[ , c("posX","posY")],
               trainPoints = trainPoints, AP = AP)
 ```
 # Conclusion
-In conclusion the analysis was able to leverage a simple KNN to evaluate whether to maintain the C0, CD or both MAC addresses. Through the analysis it was determined that CD was the MAC address that should be maintained due to having the least calculated errors. The dataset containing CD was then passed through a weighted KNN model to determine if leveraging the signal strength for location had any impact on the evaluation. The weighted KNN showed that eight neighbors was the optimal number of neighbors for the analysis. 
+In conclusion the analysis was able to leverage a simple KNN to evaluate whether to maintain the C0, CD or both MAC addresses. Through the analysis it was determined that CD was the MAC address that should be maintained due to having the least calculated errors. The dataset containing CD was then passed through a weighted KNN model to determine if leveraging the signal strength for location had any impact on the evaluation. The weighted KNN showed that eight neighbors was the optimal number of neighbors for the analysis. The simple KNN version had k=4. Given the smaller number of neighbors in the simple KNN algorithm, the weighted KNN with a higher number of neighbors would be more appropriate to use for further analysis. This larger k and the weights applied based on signal strength provide a more reliable and consistent approach in part due to the larger pool of neighbors which covers a more defined general pool of clusters.
 
 Using the KNN methodology (simple or weighted) does have some drawbacks when applied to RTLS. Speed is one predominant factor that comes into play. KNN is not speedy and in this particular instance it was required to aggregate the data on angle of orientation to obtain a speed boost for processing. The speed boost was necessary to make this analysis work however for true real time analysis this may not be enough for real time tracking. 
 
