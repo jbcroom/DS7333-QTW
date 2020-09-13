@@ -11,11 +11,17 @@ library(XML)
 ubase = "http://www.cherryblossom.org/"
 
 womenURLs = 
-  c("results/1999/cb99f.html", "results/2000/Cb003f.htm", "results/2001/oof_f.html",
-    "results/2002/ooff.htm", "results/2003/CB03-F.HTM",
-    "results/2004/women.htm", "results/2005/CB05-F.htm", 
-    "results/2006/women.htm", "results/2007/women.htm", 
-    "results/2008/women.htm", "results/2009/09cucb-F.htm",
+  c("results/1999/cb99f.html", 
+    "results/2000/Cb003f.htm", 
+    "results/2001/oof_f.html",
+    "results/2002/ooff.htm", 
+    "results/2003/CB03-F.HTM",
+    "results/2004/women.htm", 
+    "results/2005/CB05-F.htm", 
+    "results/2006/women.htm", 
+    "results/2007/women.htm", 
+    "results/2008/women.htm", 
+    "results/2009/09cucb-F.htm",
     "results/2010/2010cucb10m-F.htm", 
     "results/2011/2011cucb10m-F.htm",
     "results/2012/2012cucb10m-F.htm")
@@ -81,3 +87,46 @@ sapply(womenTables, length)
 
 head(womenTables)
 tail(womenTables)
+
+# 1999
+womenTables[1]
+
+# 2000
+womenTables[2]
+
+# 2001
+womenTables[3]
+
+# 2002
+womenTables[4]
+
+# 2003
+womenTables[5]
+
+# 2004
+womenTables[6]
+
+# 2005
+womenTables[7]
+
+# 2006
+womenTables[8]
+
+# 2007
+womenTables[9]
+
+# 2008
+womenTables[10]
+
+# 2009
+womenTables[11]
+
+# 2010
+womenTables[12]
+
+# 2011
+womenTables[13]
+
+# 2012
+womenTables[14]
+
