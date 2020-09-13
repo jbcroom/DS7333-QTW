@@ -4,51 +4,39 @@ library(XML)
 library(stringr)
 library(tidyr)
 library(urltools)
+library(rvest)
+library(dplyr)
+library(XML)
 
-#http://www.cherryblossom.org/results/1999/cb99f.html
-#http://www.cherryblossom.org/results/2000/Cb003f.htm
-#http://www.cherryblossom.org/results/2001/oof_f.html
-#http://www.cherryblossom.org/results/2002/ooff.htm
-#http://www.cherryblossom.org/results/2003/CB03-F.HTM
-#http://www.cherryblossom.org/results/2004/women.htm
-#http://www.cherryblossom.org/results/2005/CB05-F.htm
-#http://www.cherryblossom.org/results/2006/women.htm
-#http://www.cherryblossom.org/results/2007/women.htm
-#http://www.cherryblossom.org/results/2008/women.htm
-#http://www.cherryblossom.org/results/2009/09cucb-F.htm
-#http://www.cherryblossom.org/results/2010/2010cucb10m-f.htm
-#http://www.cherryblossom.org/results/2011/2011cucb10m-f.htm
-#http://www.cherryblossom.org/results/2012/2012cucb10m-f.htm
+ubase = "http://www.cherryblossom.org/"
 
-#all urls from womens 10k results
 womenURLs = 
-  c("results/1999/cb99f.html", 
-    "results/2000/Cb003f.htm", 
-    "results/2001/oof_f.html",
-    "results/2002/ooff.htm", 
-    "results/2003/CB03-F.HTM",
-    "results/2004/women.htm", 
-    "results/2005/CB05-F.htm", 
-    "results/2006/women.htm", 
-    "results/2007/women.htm", 
-    "results/2008/women.htm", 
-    "results/2009/09cucb-F.htm",
-    "results/2010/2010cucb10m-f.htm", 
-    "results/2011/2011cucb10m-f.htm",
-    "results/2012/2012cucb10m-f.htm")
+  c("results/1999/cb99f.html", "results/2000/Cb003f.htm", "results/2001/oof_f.html",
+    "results/2002/ooff.htm", "results/2003/CB03-F.HTM",
+    "results/2004/women.htm", "results/2005/CB05-F.htm", 
+    "results/2006/women.htm", "results/2007/women.htm", 
+    "results/2008/women.htm", "results/2009/09cucb-F.htm",
+    "results/2010/2010cucb10m-F.htm", 
+    "results/2011/2011cucb10m-F.htm",
+    "results/2012/2012cucb10m-F.htm")
 
-urls = paste(ubase, womenURLs, sep = "")
+urls = paste(ubase, menURLs, sep = "")
 
 urls[1:3]
 
-#### Textbook Function
+
 extractResTable =
+  # takes a list of websites from the cherry blossom race
+  # a list of years corresponding to the year the result is for
+  # and the gender of the participant
+  # Retrieve data from web site, 
+  # find the preformatted text,
+  # and write lines or return as a character vector.
+  # returns a list of strings corrsponding to lines in the web url
   function(url = "http://www.cherryblossom.org/results/2009/09cucb-F.htm",
            year = 1999, sex = "male", file = NULL)
   {
-    #added encoding for windows users who get an "A" symbol
-    doc = htmlParse(url)    
-    #doc = htmlParse(url, encoding="UTF-8")
+    doc = htmlParse(url)
     
     if (year == 2000) {
       # Get preformatted text from 4th font element
@@ -63,7 +51,14 @@ extractResTable =
       div1 = getNodeSet(doc, "//div[@class='Section1']")
       pres = getNodeSet(div1[[1]], "//pre")
       els = sapply(pres, xmlValue)
+      els = gsub("Â", " ", els)
     }
+    else if (year == 1999) {
+      # Get preformatted text from <pre> elements
+      pres = getNodeSet(doc, "//pre")
+      txt = xmlValue(pres[[1]])
+      els = strsplit(txt, "\n")[[1]]   
+    } 
     else {
       # Get preformatted text from <pre> elements
       pres = getNodeSet(doc, "//pre")
@@ -76,14 +71,13 @@ extractResTable =
     writeLines(els, con = file)
   }
 
-#### Individual Input Components for Testing
-#url <- 'http://www.cherryblossom.org/results/1999/cb99m.html'
-#year <- 1999
-#sex <- "male"
-#file <- NULL
-####
 
-#### Textbook example with (1) URL
-df <- extractResTable(url = "http://www.cherryblossom.org/results/2000/Cb003m.htm", year = 2000, sex = "male", file = NULL)
+years = 1999:2012
+urls = paste(ubase, womenURLs, sep = "")
+urls[1:3]
+womenTables = mapply(extractResTable, url = urls, year = years, sex='female')
+names(womenTables) = years
+sapply(womenTables, length)
 
-head(df)
+head(womenTables)
+tail(womenTables)
