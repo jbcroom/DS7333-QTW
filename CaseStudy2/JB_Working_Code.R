@@ -117,7 +117,26 @@ womenTables[9]
 womenTables[10]
 
 # 2009
-womenTables[11]
+women_2009_lst <- womenTables[11]
+women_2009_lst <- lapply(women_2009_lst, function(x) {x[c(-1:-4)]})
+lengths(women_2009_lst) # 8329
+
+women_2009_t = as.data.frame(women_2009_lst)
+women_2009_df <- data.frame(Place = substr(women_2009_t[5:8329,],1,5),
+                            DivTot =substr(women_2009_t[5:8329,],7,17),
+                            Num =substr(women_2009_t[5:8329,],19,24),
+                            Name =substr(women_2009_t[5:8329,],26,47),
+                            Ag =substr(women_2009_t[5:8329,],49,50),
+                            Hometown =substr(women_2009_t[5:8329,],52,71),
+                            Gun_Time =substr(women_2009_t[5:8329,],73,79),
+                            NetTime =substr(women_2009_t[5:8329,],81,87),
+                            Pace =substr(women_2009_t[5:8329,],89,94),
+                            S =substr(women_2009_t[5:8329,],96,96))
+
+head(women_2009_df)
+tail(women_2009_df)
+
+
 
 ### 2010
 women_2010_lst <- womenTables[12]
@@ -139,6 +158,7 @@ women_2010_df <- data.frame(Place = substr(women_2010_t[5:8859,],1,5),
                             S =substr(women_2010_t[5:8859,],104,104))
 
 head(women_2010_df)
+tail(women_2010_df)
 
 #### 2011
 women_2011_lst <- womenTables[13]
@@ -160,6 +180,7 @@ women_2011_df <- data.frame(Place = substr(women_2011_t[5:9034,],1,5),
                             S =substr(women_2011_t[5:9034,],103,103))
 
 head(women_2011_df)
+tail(women_2011_df)
 
 
 ### 2012
@@ -181,3 +202,4 @@ women_2012_df <- data.frame(Place = substr(women_2012_t[5:9733,],1,5),
                   S =substr(women_2012_t[5:9733,],95,95))
 
 head(women_2012_df)
+tail(women_2012_df)
