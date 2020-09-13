@@ -8,6 +8,7 @@ library(rvest)
 library(dplyr)
 library(XML)
 
+
 ubase = "http://www.cherryblossom.org/"
 
 womenURLs = 
@@ -85,9 +86,6 @@ womenTables = mapply(extractResTable, url = urls, year = years, sex='female')
 names(womenTables) = years
 sapply(womenTables, length)
 
-head(womenTables)
-tail(womenTables)
-
 # 1999
 womenTables[1]
 
@@ -121,12 +119,65 @@ womenTables[10]
 # 2009
 womenTables[11]
 
-# 2010
-womenTables[12]
+### 2010
+women_2010_lst <- womenTables[12]
+women_2010_lst <- lapply(women_2010_lst, function(x) {x[c(-1:-4)]})
+lengths(women_2010_lst) # 8859
 
-# 2011
-womenTables[13]
+# Convert to dataframe
+women_2010_t = as.data.frame(women_2010_lst)
+women_2010_df <- data.frame(Place = substr(women_2010_t[5:8859,],1,5),
+                            DivTot =substr(women_2010_t[5:8859,],7,17),
+                            Num =substr(women_2010_t[5:8859,],19,24),
+                            Name =substr(women_2010_t[5:8859,],26,47),
+                            Ag =substr(women_2010_t[5:8859,],49,50),
+                            Hometown =substr(women_2010_t[5:8859,],52,71),
+                            Five_Mile =substr(women_2010_t[5:8859,],73,79),
+                            GunTime =substr(women_2010_t[5:8859,],81,87),
+                            NetTime =substr(women_2010_t[5:8859,],89,96),
+                            Pace =substr(women_2010_t[5:8859,],98,102),
+                            S =substr(women_2010_t[5:8859,],104,104))
 
-# 2012
-womenTables[14]
+head(women_2010_df)
 
+#### 2011
+women_2011_lst <- womenTables[13]
+women_2011_lst <- lapply(women_2011_lst, function(x) {x[c(-1:-4)]})
+lengths(women_2011_lst) # 9034
+
+# Convert to dataframe
+women_2011_t = as.data.frame(women_2011_lst)
+women_2011_df <- data.frame(Place = substr(women_2011_t[5:9034,],1,5),
+                            DivTot =substr(women_2011_t[5:9034,],7,17),
+                            Num =substr(women_2011_t[5:9034,],19,24),
+                            Name =substr(women_2011_t[5:9034,],26,47),
+                            Ag =substr(women_2011_t[5:9034,],49,50),
+                            Hometown =substr(women_2011_t[5:9034,],52,71),
+                            Five_Mile =substr(women_2011_t[5:9034,],73,79),
+                            Time =substr(women_2011_t[5:9034,],81,87),
+                            NetTime =substr(women_2011_t[5:9034,],89,96),
+                            Pace =substr(women_2011_t[5:9034,],98,101),
+                            S =substr(women_2011_t[5:9034,],103,103))
+
+head(women_2011_df)
+
+
+### 2012
+women_2012_lst <- womenTables[14]
+women_2012_lst <- lapply(women_2012_lst, function(x) {x[c(-1,-2,-3,-4)]})
+lengths(women_2012_lst) # 9733
+
+# Convert to dataframe
+women_2012_t = as.data.frame(women_2012_lst)
+women_2012_df <- data.frame(Place = substr(women_2012_t[5:9733,],1,5),
+                  DivTot =substr(women_2012_t[5:9733,],7,17),
+                  Num =substr(women_2012_t[5:9733,],19,24),
+                  Name =substr(women_2012_t[5:9733,],26,47),
+                  Ag =substr(women_2012_t[5:9733,],49,50),
+                  Hometown =substr(women_2012_t[5:9733,],52,71),
+                  Five_Mile =substr(women_2012_t[5:9733,],73,79),
+                  Time =substr(women_2012_t[5:9733,],81,87),
+                  Pace =substr(women_2012_t[5:9733,],89,93),
+                  S =substr(women_2012_t[5:9733,],95,95))
+
+head(women_2012_df)
