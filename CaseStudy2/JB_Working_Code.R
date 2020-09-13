@@ -111,7 +111,25 @@ womenTables[7]
 womenTables[8]
 
 # 2007
-womenTables[9]
+women_2007_lst <- womenTables[9]
+women_2007_lst <- lapply(women_2007_lst, function(x) {x[c(-1:-4)]})
+lengths(women_2007_lst) # 5695
+
+women_2007_t = as.data.frame(women_2007_lst)
+women_2007_df <- data.frame(Place = substr(women_2007_t[5:5695,],1,5),
+                            DivTot =substr(women_2007_t[5:5695,],7,17),
+                            Num =substr(women_2007_t[5:5695,],19,24),
+                            Name =substr(women_2007_t[5:5695,],26,47),
+                            Ag =substr(women_2007_t[5:5695,],49,50),
+                            Hometown =substr(women_2007_t[5:5695,],52,69),
+                            Time =substr(women_2007_t[5:5695,],71,77),
+                            Pace =substr(women_2007_t[5:5695,],79,84),
+                            S =substr(women_2007_t[5:5695,],86,86),
+                            Split =substr(women_2007_t[5:5695,],88,94))
+
+head(women_2007_df)
+tail(women_2007_df)
+
 
 # 2008
 women_2008_lst <- womenTables[10]
