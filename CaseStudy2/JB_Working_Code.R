@@ -107,8 +107,46 @@ womenTables[6]
 # 2005
 womenTables[7]
 
+women_2005_lst <- womenTables[7]
+women_2005_lst <- lapply(women_2005_lst, function(x) {x[c(-1:-4)]})
+lengths(women_2005_lst) # 4338
+
+# Convert to dataframe
+women_2005_t = as.data.frame(women_2005_lst)
+women_2005_df <- data.frame(Place = substr(women_2005_t[5:4338,],1,5),
+                            DivTot =substr(women_2005_t[5:4338,],7,15),
+                            Name =substr(women_2005_t[5:4338,],17,38),
+                            Ag =substr(women_2005_t[5:4338,],40,41),
+                            Hometown =substr(women_2005_t[5:4338,],43,60),
+                            Net =substr(women_2005_t[5:4338,],62,68),
+                            Gun =substr(women_2005_t[5:4338,],70,76),
+                            Pace =substr(women_2005_t[5:4338,],78,82))
+
+head(women_2005_df)
+tail(women_2005_df)
+
+
 # 2006
-womenTables[8]
+women_2006_lst <- womenTables[8]
+women_2006_lst <- lapply(women_2006_lst, function(x) {x[c(-1:-4)]})
+lengths(women_2006_lst) # 5441
+
+# Convert to dataframe
+women_2006_t = as.data.frame(women_2006_lst)
+women_2006_df <- data.frame(Place = substr(women_2006_t[5:5441,],1,5),
+                            DivTot =substr(women_2006_t[5:5441,],7,14),
+                            Num =substr(women_2006_t[5:5441,],16,21),
+                            Name =substr(women_2006_t[5:5441,],23,44),
+                            Ag =substr(women_2006_t[5:5441,],46,47),
+                            Hometown =substr(women_2006_t[5:5441,],49,64),
+                            NetTime =substr(women_2006_t[5:5441,],65,71),
+                            GunTime =substr(women_2006_t[5:5441,],73,79),
+                            Pace =substr(women_2006_t[5:5441,],81,86),
+                            S =substr(women_2006_t[5:5441,],88,88))
+
+head(women_2006_df)
+tail(women_2006_df)
+
 
 # 2007
 women_2007_lst <- womenTables[9]
