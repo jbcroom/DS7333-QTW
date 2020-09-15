@@ -232,9 +232,9 @@ women_2006_df <- data.frame(Place = substr(women_2006_t[5:5439,],1,5),
                             Name =substr(women_2006_t[5:5439,],23,44),
                             Ag =substr(women_2006_t[5:5439,],46,47),
                             Hometown =substr(women_2006_t[5:5439,],49,64),
-                            NetTime =substr(women_2006_t[5:5439,],65,71),
-                            GunTime =substr(women_2006_t[5:5439,],73,79),
-                            Pace =substr(women_2006_t[5:5439,],81,86),
+                            NetTime =substr(women_2006_t[5:5439,],65,72),
+                            GunTime =substr(women_2006_t[5:5439,],73,80),
+                            Pace =substr(women_2006_t[5:5439,],82,87),
                             S =substr(women_2006_t[5:5439,],88,88))
 
 head(women_2006_df)
@@ -374,3 +374,108 @@ women_2012_df <- data.frame(Place = substr(women_2012_t[5:9733,],1,5),
 
 head(women_2012_df)
 tail(women_2012_df)
+
+
+
+head(women_1999_df)
+head(women_2000_df)
+head(women_2001_df)
+head(women_2002_df)
+head(women_2003_df)
+head(women_2004_df)
+head(women_2005_df)
+head(women_2006_df)
+head(women_2007_df)
+head(women_2008_df)
+head(women_2009_df)
+head(women_2010_df)
+head(women_2011_df)
+head(women_2012_df)
+
+# Time / 10 = pace
+# Combine all dataframes into a single common dataframe
+women_1999_df[,"Year"] <- "1999"
+women_1999_df[,"Net"] <- women_1999_df[,"Time"]
+women_1999_df <- women_1999_df[,c("Year","Place","DivTot","Name","Ag","Hometown","Net","Pace")]
+
+women_2000_df[,"Year"] <- "2000"
+women_2000_df[,"Pace"] <- "0"
+women_2000_df <- women_2000_df[,c("Year","Place","DivTot","Name","Ag","Hometown","Net","Pace")]
+
+women_2001_df[,"Year"] <- "2001"
+women_2001_df[,"DivTot"] <- "0"
+women_2001_df[,"Pace"] <- "0"
+women_2001_df <- women_2001_df[,c("Year","Place","DivTot","Name","Ag","Hometown","Net","Pace")]
+
+women_2002_df[,"Year"] <- "2002"
+women_2002_df[,"DivTot"] <- "0"
+women_2002_df[,"Pace"] <- "0"
+women_2002_df <- women_2002_df[,c("Year","Place","DivTot","Name","Ag","Hometown","Net","Pace")]
+
+women_2003_df[,"Year"] <- "2003"
+women_2003_df[,"Pace"] <- "0"
+women_2003_df[,"Net"] <- women_2003_df[,"NetTime"]
+women_2003_df <- women_2003_df[,c("Year","Place","DivTot","Name","Ag","Hometown","Net","Pace")]
+
+women_2004_df[,"Year"] <- "2004"
+women_2004_df[,"Pace"] <- "0"
+women_2004_df <- women_2004_df[,c("Year","Place","DivTot","Name","Ag","Hometown","Net","Pace")]
+
+women_2005_df[,"Year"] <- "2005"
+women_2005_df <- women_2005_df[,c("Year","Place","DivTot","Name","Ag","Hometown","Net","Pace")]
+
+women_2006_df[,"Year"] <- "2006"
+women_2006_df[,"Net"] <- women_2006_df[,"NetTime"]
+women_2006_df <- women_2006_df[,c("Year","Place","DivTot","Name","Ag","Hometown","Net","Pace")]
+
+women_2007_df[,"Year"] <- "2007"
+women_2007_df[,"Net"] <- women_2007_df[,"Time"]
+women_2007_df <- women_2007_df[,c("Year","Place","DivTot","Name","Ag","Hometown","Net","Pace")]
+
+women_2008_df[,"Year"] <- "2008"
+women_2008_df[,"Pace"] <- women_2008_df[,"Pace3"]
+women_2008_df[,"Net"] <- women_2008_df[,"Time"]
+women_2008_df <- women_2008_df[,c("Year","Place","DivTot","Name","Ag","Hometown","Net","Pace")]
+
+women_2009_df[,"Year"] <- "2009"
+women_2009_df[,"Net"] <- women_2009_df[,"NetTime"]
+women_2009_df <- women_2009_df[,c("Year","Place","DivTot","Name","Ag","Hometown","Net","Pace")]
+
+women_2010_df[,"Year"] <- "2010"
+women_2010_df[,"Net"] <- women_2010_df[,"NetTime"]
+women_2010_df <- women_2010_df[,c("Year","Place","DivTot","Name","Ag","Hometown","Net","Pace")]
+
+women_2011_df[,"Year"] <- "2011"
+women_2011_df[,"Net"] <- women_2011_df[,"Time"]
+women_2011_df <- women_2011_df[,c("Year","Place","DivTot","Name","Ag","Hometown","Net","Pace")]
+
+women_2012_df[,"Year"] <- "2012"
+women_2012_df[,"Net"] <- women_2012_df[,"Time"]
+women_2012_df <- women_2012_df[,c("Year","Place","DivTot","Name","Ag","Hometown","Net","Pace")]
+
+# Combined women dataframe
+women_combined_df <- bind_rows(women_1999_df
+                              ,women_2000_df
+                              ,women_2001_df
+                              ,women_2002_df
+                              ,women_2003_df
+                              ,women_2004_df
+                              ,women_2005_df
+                              ,women_2006_df
+                              ,women_2007_df
+                              ,women_2008_df
+                              ,women_2009_df
+                              ,women_2010_df
+                              ,women_2011_df
+                              ,women_2012_df)
+
+head(women_combined_df)
+tail(women_combined_df)
+
+
+
+
+
+
+
+
