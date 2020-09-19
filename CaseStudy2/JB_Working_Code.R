@@ -7,6 +7,7 @@ library(urltools)
 library(rvest)
 library(dplyr)
 library(XML)
+library(ggplot2)
 
 
 ubase = "http://www.cherryblossom.org/"
@@ -397,61 +398,89 @@ head(women_2012_df)
 women_1999_df[,"Year"] <- "1999"
 women_1999_df[,"Net"] <- women_1999_df[,"Time"]
 women_1999_df <- women_1999_df[,c("Year","Place","DivTot","Name","Ag","Hometown","Net","Pace")]
+women_1999_df$Ag <- as.numeric(women_1999_df$Ag)
+women_1999_df <- na.omit(women_1999_df)
 
 women_2000_df[,"Year"] <- "2000"
 women_2000_df[,"Pace"] <- "0"
 women_2000_df <- women_2000_df[,c("Year","Place","DivTot","Name","Ag","Hometown","Net","Pace")]
+women_2000_df$Ag <- as.numeric(women_2000_df$Ag)
+women_2000_df <- na.omit(women_2000_df)
 
 women_2001_df[,"Year"] <- "2001"
 women_2001_df[,"DivTot"] <- "0"
 women_2001_df[,"Pace"] <- "0"
 women_2001_df <- women_2001_df[,c("Year","Place","DivTot","Name","Ag","Hometown","Net","Pace")]
+women_2001_df$Ag <- as.numeric(women_2001_df$Ag)
+women_2001_df <- na.omit(women_2001_df)
 
 women_2002_df[,"Year"] <- "2002"
 women_2002_df[,"DivTot"] <- "0"
 women_2002_df[,"Pace"] <- "0"
 women_2002_df <- women_2002_df[,c("Year","Place","DivTot","Name","Ag","Hometown","Net","Pace")]
+women_2002_df$Ag <- as.numeric(women_2002_df$Ag)
+women_2002_df <- na.omit(women_2002_df)
 
 women_2003_df[,"Year"] <- "2003"
 women_2003_df[,"Pace"] <- "0"
 women_2003_df[,"Net"] <- women_2003_df[,"NetTime"]
 women_2003_df <- women_2003_df[,c("Year","Place","DivTot","Name","Ag","Hometown","Net","Pace")]
+women_2003_df$Ag <- as.numeric(women_2003_df$Ag)
+women_2003_df <- na.omit(women_2003_df)
 
 women_2004_df[,"Year"] <- "2004"
 women_2004_df[,"Pace"] <- "0"
 women_2004_df <- women_2004_df[,c("Year","Place","DivTot","Name","Ag","Hometown","Net","Pace")]
+women_2004_df$Ag <- as.numeric(women_2004_df$Ag)
+women_2004_df <- na.omit(women_2000_df)
 
 women_2005_df[,"Year"] <- "2005"
 women_2005_df <- women_2005_df[,c("Year","Place","DivTot","Name","Ag","Hometown","Net","Pace")]
+women_2005_df$Ag <- as.numeric(women_2005_df$Ag)
+women_2005_df <- na.omit(women_2005_df)
 
 women_2006_df[,"Year"] <- "2006"
 women_2006_df[,"Net"] <- women_2006_df[,"NetTime"]
 women_2006_df <- women_2006_df[,c("Year","Place","DivTot","Name","Ag","Hometown","Net","Pace")]
+women_2006_df$Ag <- as.numeric(women_2006_df$Ag)
+women_2006_df <- na.omit(women_2006_df)
 
 women_2007_df[,"Year"] <- "2007"
 women_2007_df[,"Net"] <- women_2007_df[,"Time"]
 women_2007_df <- women_2007_df[,c("Year","Place","DivTot","Name","Ag","Hometown","Net","Pace")]
+women_2007_df$Ag <- as.numeric(women_2007_df$Ag)
+women_2007_df <- na.omit(women_2007_df)
 
 women_2008_df[,"Year"] <- "2008"
 women_2008_df[,"Pace"] <- women_2008_df[,"Pace3"]
 women_2008_df[,"Net"] <- women_2008_df[,"Time"]
 women_2008_df <- women_2008_df[,c("Year","Place","DivTot","Name","Ag","Hometown","Net","Pace")]
+women_2008_df$Ag <- as.numeric(women_2008_df$Ag)
+women_2008_df <- na.omit(women_2008_df)
 
 women_2009_df[,"Year"] <- "2009"
 women_2009_df[,"Net"] <- women_2009_df[,"NetTime"]
 women_2009_df <- women_2009_df[,c("Year","Place","DivTot","Name","Ag","Hometown","Net","Pace")]
+women_2009_df$Ag <- as.numeric(women_2009_df$Ag)
+women_2009_df <- na.omit(women_2009_df)
 
 women_2010_df[,"Year"] <- "2010"
 women_2010_df[,"Net"] <- women_2010_df[,"NetTime"]
 women_2010_df <- women_2010_df[,c("Year","Place","DivTot","Name","Ag","Hometown","Net","Pace")]
+women_2010_df$Ag <- as.numeric(women_2010_df$Ag)
+women_2010_df <- na.omit(women_2010_df)
 
 women_2011_df[,"Year"] <- "2011"
 women_2011_df[,"Net"] <- women_2011_df[,"Time"]
 women_2011_df <- women_2011_df[,c("Year","Place","DivTot","Name","Ag","Hometown","Net","Pace")]
+women_2011_df$Ag <- as.numeric(women_2011_df$Ag)
+women_2011_df <- na.omit(women_2011_df)
 
 women_2012_df[,"Year"] <- "2012"
 women_2012_df[,"Net"] <- women_2012_df[,"Time"]
 women_2012_df <- women_2012_df[,c("Year","Place","DivTot","Name","Ag","Hometown","Net","Pace")]
+women_2012_df$Ag <- as.numeric(women_2012_df$Ag)
+women_2012_df <- na.omit(women_2012_df)
 
 # Combined women dataframe
 women_combined_df <- bind_rows(women_1999_df
@@ -470,22 +499,84 @@ women_combined_df <- bind_rows(women_1999_df
                               ,women_2012_df)
 
 # Check the format of each column in the dataframe
-sapply(women_combined_df, class)   
-
-# Convert age to numeric
-women_combined_df$Ag <- as.numeric(women_combined_df$Ag)
-women_combined_df$Ag[is.na(women_combined_df$Ag)] <- 0
+sapply(women_combined_df, class)  
 
 head(women_combined_df)
 tail(women_combined_df)
 
-
 # Box Plots
 # A lot of younger kids in 2006 many on the tail end of race times
-boxplot(Ag~Year, data=women_combined_df, main="Ages by Year - Combined DF", 
-        xlab="Years", ylab="Ages")
 
+ggplot(women_combined_df, aes(x=Year, y=Ag)) + 
+  geom_boxplot(outlier.colour="red", outlier.shape=8,
+               outlier.size=4) +
+  ggtitle("Women's Racers Ages - All Years")
 
+# Distribution of ages - we can see a bimodal distribution here, with a large portion of younger runners primarily in the 2006 year
+# We know it's in the 2006 year from the box plot
+  ggplot(women_combined_df) + 
+    geom_density(aes(x = Ag), alpha = 0.7,color="green", fill="lightgreen") + 
+    ggtitle("Women's Racers Age Distribution - All Years") + 
+    geom_vline(aes(xintercept=mean(Ag)), color="red", linetype="dashed", size=1)
+  
+  # Mean years of runners per race year
+  
+  # Total - 22.66 years old
+  mean(women_combined_df$Ag)
+  
+  # 1999 - 24.84
+  mean(women_1999_df$Ag)
+  
+  # 2000 - 22.54
+  mean(women_2000_df$Ag)
+  
+  # 2001 - 23.80
+  mean(women_2001_df$Ag)
+  
+  # 2002 - 24.12
+  mean(women_2002_df$Ag)
+  
+  # 2003 - 23.04
+  mean(women_2003_df$Ag)
+  
+  # 2004 - 22.54
+  mean(women_2004_df$Ag)
+  
+  # 2005 - 24.12
+  mean(women_2005_df$Ag)
+  
+  # 2006 - 14.46
+  # Confirms the skew is from 2006 primarily
+  mean(women_2006_df$Ag)
+  
+  # 2007 - 22.51
+  mean(women_2007_df$Ag)
+  
+  # 2008 - 22.20
+  mean(women_2008_df$Ag)
+  
+  # 2009 - 25.07
+  mean(women_2009_df$Ag)
+  
+  # 2010 - 22.29
+  mean(women_2010_df$Ag)
+  
+  # 2011 - 24.73
+  mean(women_2011_df$Ag)
+  
+  # 2012 - 21.87
+  mean(women_2012_df$Ag)
+
+  # If we re-plot the age distribution and ignore all ages younger than 6 due to the 2006 outlier, we get this distribution
+  # There is no clear evidence that racers' ages are getting younger, but take note of the two outlier years in 2007 and 2002 where
+  # ages were a bit older
+  women_combined_df %>% 
+    filter(Ag > 6 & Year == c('1999','2000','2001','2002','2003','2004','2005','2006','2007','2008','2009','2010','2011','2012')) %>% 
+    ggplot() + 
+    geom_density(aes(x = Ag,group = factor(Year), fill=factor(Year), alpha = 0.5)) + 
+    ggtitle("Women's Racers Age Distribution - All Years") + 
+    labs(fill = "Year") +
+    geom_vline(aes(xintercept=mean(Ag)), color="red", linetype="dashed", size=1)
 
 
 
