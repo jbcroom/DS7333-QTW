@@ -506,7 +506,6 @@ tail(women_combined_df)
 
 # Box Plots
 # A lot of younger kids in 2006 many on the tail end of race times
-
 ggplot(women_combined_df, aes(x=Year, y=Ag)) + 
   geom_boxplot(outlier.colour="red", outlier.shape=8,
                outlier.size=4) +
@@ -567,29 +566,27 @@ ggplot(women_combined_df, aes(x=Year, y=Ag)) +
   # 2012 - 21.87
   mean(women_2012_df$Ag)
 
-  # If we re-plot the age distribution and ignore all ages younger than 6 due to the 2006 outlier, we get this distribution
-  # There is no clear evidence that racers' ages are getting younger, but take note of the two outlier years in 2007 and 2002 where
+  # If we re-plot the age distribution and ignore all ages younger than 18 due to the 2006 outlier, we get this distribution
+  # There is some evidence that racers' ages are getting younger, but take note of the two outlier years in 2007 and 2002 where
   # ages were a bit older
+  
+  Year_Sel <- c('1999','2000','2001','2002','2003','2004','2005','2006','2007','2008','2009','2010','2011','2012')
   women_combined_df %>% 
-    filter(Ag > 6 & Year == c('1999','2000','2001','2002','2003','2004','2005','2006','2007','2008','2009','2010','2011','2012')) %>% 
+    filter(Ag > 18 & Year == Year_Sel) %>% 
     ggplot() + 
     geom_density(aes(x = Ag,group = factor(Year), fill=factor(Year), alpha = 0.5)) + 
-    ggtitle("Women's Racers Age Distribution - All Years") + 
+    ggtitle("Women's Racers Age Distribution - All Years - Distribution") + 
     labs(fill = "Year") +
     geom_vline(aes(xintercept=mean(Ag)), color="red", linetype="dashed", size=1)
 
-
-
-
-
-
-
-women_combined_df$ag <- as.numeric(as.character(women_combined_df$ag)) 
-
-
-
-
-qqnorm(data=dfData, dfData.age~year, pch=1, frame=FALSE)
-
+  # Scatter Plot - this plot, filtered for ages > 18, clearly shows a stronger concentration of ages in the 2009 - 2012 year range compared
+  # to previous years
+  women_combined_df %>% 
+    filter(Ag > 18 & Year == Year_Sel) %>% 
+    ggplot(map=aes(Year,Ag))+
+    geom_point()+
+    geom_jitter() + 
+    ggtitle("Women's Racers Ages - All Years - Scatter Plot")
+  
 
 
