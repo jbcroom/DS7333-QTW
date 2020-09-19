@@ -393,18 +393,35 @@ head(women_2010_df)
 head(women_2011_df)
 head(women_2012_df)
 
+# Function to convert time to a decimal so we can interpret it
+convertTime = function(time) {
+  timePieces = strsplit(time, ":")
+  timePieces = sapply(timePieces, as.numeric)
+  sapply(timePieces, function(x) {
+    if (length(x) == 2) x[1] + x[2]/60
+    else 60*x[1] + x[2] + x[3]/60
+  })
+}
+
+
 # Time / 10 = pace
 # Combine all dataframes into a single common dataframe
 women_1999_df[,"Year"] <- "1999"
 women_1999_df[,"Net"] <- women_1999_df[,"Time"]
 women_1999_df <- women_1999_df[,c("Year","Place","DivTot","Name","Ag","Hometown","Net","Pace")]
 women_1999_df$Ag <- as.numeric(women_1999_df$Ag)
+# Time conversion
+women_1999_df$Net <- as.character(women_1999_df$Net)
+women_1999_df$Net_Conv = convertTime(women_1999_df$Net)
 women_1999_df <- na.omit(women_1999_df)
 
 women_2000_df[,"Year"] <- "2000"
 women_2000_df[,"Pace"] <- "0"
 women_2000_df <- women_2000_df[,c("Year","Place","DivTot","Name","Ag","Hometown","Net","Pace")]
 women_2000_df$Ag <- as.numeric(women_2000_df$Ag)
+# Time conversion
+women_2000_df$Net <- as.character(women_2000_df$Net)
+women_2000_df$Net_Conv = convertTime(women_2000_df$Net)
 women_2000_df <- na.omit(women_2000_df)
 
 women_2001_df[,"Year"] <- "2001"
@@ -412,6 +429,9 @@ women_2001_df[,"DivTot"] <- "0"
 women_2001_df[,"Pace"] <- "0"
 women_2001_df <- women_2001_df[,c("Year","Place","DivTot","Name","Ag","Hometown","Net","Pace")]
 women_2001_df$Ag <- as.numeric(women_2001_df$Ag)
+# Time conversion
+women_2001_df$Net <- as.character(women_2001_df$Net)
+women_2001_df$Net_Conv = convertTime(women_2001_df$Net)
 women_2001_df <- na.omit(women_2001_df)
 
 women_2002_df[,"Year"] <- "2002"
@@ -419,6 +439,9 @@ women_2002_df[,"DivTot"] <- "0"
 women_2002_df[,"Pace"] <- "0"
 women_2002_df <- women_2002_df[,c("Year","Place","DivTot","Name","Ag","Hometown","Net","Pace")]
 women_2002_df$Ag <- as.numeric(women_2002_df$Ag)
+# Time conversion
+women_2002_df$Net <- as.character(women_2002_df$Net)
+women_2002_df$Net_Conv = convertTime(women_2002_df$Net)
 women_2002_df <- na.omit(women_2002_df)
 
 women_2003_df[,"Year"] <- "2003"
@@ -426,29 +449,44 @@ women_2003_df[,"Pace"] <- "0"
 women_2003_df[,"Net"] <- women_2003_df[,"NetTime"]
 women_2003_df <- women_2003_df[,c("Year","Place","DivTot","Name","Ag","Hometown","Net","Pace")]
 women_2003_df$Ag <- as.numeric(women_2003_df$Ag)
+# Time conversion
+women_2003_df$Net <- as.character(women_2003_df$Net)
+women_2003_df$Net_Conv = convertTime(women_2003_df$Net)
 women_2003_df <- na.omit(women_2003_df)
 
 women_2004_df[,"Year"] <- "2004"
 women_2004_df[,"Pace"] <- "0"
 women_2004_df <- women_2004_df[,c("Year","Place","DivTot","Name","Ag","Hometown","Net","Pace")]
 women_2004_df$Ag <- as.numeric(women_2004_df$Ag)
-women_2004_df <- na.omit(women_2000_df)
+# Time conversion
+women_2004_df$Net <- as.character(women_2004_df$Net)
+women_2004_df$Net_Conv = convertTime(women_2004_df$Net)
+women_2004_df <- na.omit(women_2004_df)
 
 women_2005_df[,"Year"] <- "2005"
 women_2005_df <- women_2005_df[,c("Year","Place","DivTot","Name","Ag","Hometown","Net","Pace")]
 women_2005_df$Ag <- as.numeric(women_2005_df$Ag)
+# Time conversion
+women_2005_df$Net <- as.character(women_2005_df$Net)
+women_2005_df$Net_Conv = convertTime(women_2005_df$Net)
 women_2005_df <- na.omit(women_2005_df)
 
 women_2006_df[,"Year"] <- "2006"
 women_2006_df[,"Net"] <- women_2006_df[,"NetTime"]
 women_2006_df <- women_2006_df[,c("Year","Place","DivTot","Name","Ag","Hometown","Net","Pace")]
 women_2006_df$Ag <- as.numeric(women_2006_df$Ag)
+# Time conversion
+women_2006_df$Net <- as.character(women_2006_df$Net)
+women_2006_df$Net_Conv = convertTime(women_2006_df$Net)
 women_2006_df <- na.omit(women_2006_df)
 
 women_2007_df[,"Year"] <- "2007"
 women_2007_df[,"Net"] <- women_2007_df[,"Time"]
 women_2007_df <- women_2007_df[,c("Year","Place","DivTot","Name","Ag","Hometown","Net","Pace")]
 women_2007_df$Ag <- as.numeric(women_2007_df$Ag)
+# Time conversion
+women_2007_df$Net <- as.character(women_2007_df$Net)
+women_2007_df$Net_Conv = convertTime(women_2007_df$Net)
 women_2007_df <- na.omit(women_2007_df)
 
 women_2008_df[,"Year"] <- "2008"
@@ -456,30 +494,45 @@ women_2008_df[,"Pace"] <- women_2008_df[,"Pace3"]
 women_2008_df[,"Net"] <- women_2008_df[,"Time"]
 women_2008_df <- women_2008_df[,c("Year","Place","DivTot","Name","Ag","Hometown","Net","Pace")]
 women_2008_df$Ag <- as.numeric(women_2008_df$Ag)
+# Time conversion
+women_2008_df$Net <- as.character(women_2008_df$Net)
+women_2008_df$Net_Conv = convertTime(women_2008_df$Net)
 women_2008_df <- na.omit(women_2008_df)
 
 women_2009_df[,"Year"] <- "2009"
 women_2009_df[,"Net"] <- women_2009_df[,"NetTime"]
 women_2009_df <- women_2009_df[,c("Year","Place","DivTot","Name","Ag","Hometown","Net","Pace")]
 women_2009_df$Ag <- as.numeric(women_2009_df$Ag)
+# Time conversion
+women_2009_df$Net <- as.character(women_2009_df$Net)
+women_2009_df$Net_Conv = convertTime(women_2009_df$Net)
 women_2009_df <- na.omit(women_2009_df)
 
 women_2010_df[,"Year"] <- "2010"
 women_2010_df[,"Net"] <- women_2010_df[,"NetTime"]
 women_2010_df <- women_2010_df[,c("Year","Place","DivTot","Name","Ag","Hometown","Net","Pace")]
 women_2010_df$Ag <- as.numeric(women_2010_df$Ag)
+# Time conversion
+women_2010_df$Net <- as.character(women_2010_df$Net)
+women_2010_df$Net_Conv = convertTime(women_2010_df$Net)
 women_2010_df <- na.omit(women_2010_df)
 
 women_2011_df[,"Year"] <- "2011"
 women_2011_df[,"Net"] <- women_2011_df[,"Time"]
 women_2011_df <- women_2011_df[,c("Year","Place","DivTot","Name","Ag","Hometown","Net","Pace")]
 women_2011_df$Ag <- as.numeric(women_2011_df$Ag)
+# Time conversion
+women_2011_df$Net <- as.character(women_2011_df$Net)
+women_2011_df$Net_Conv = convertTime(women_2011_df$Net)
 women_2011_df <- na.omit(women_2011_df)
 
 women_2012_df[,"Year"] <- "2012"
 women_2012_df[,"Net"] <- women_2012_df[,"Time"]
 women_2012_df <- women_2012_df[,c("Year","Place","DivTot","Name","Ag","Hometown","Net","Pace")]
 women_2012_df$Ag <- as.numeric(women_2012_df$Ag)
+# Time conversion
+women_2012_df$Net <- as.character(women_2012_df$Net)
+women_2012_df$Net_Conv = convertTime(women_2012_df$Net)
 women_2012_df <- na.omit(women_2012_df)
 
 # Combined women dataframe
@@ -519,7 +572,6 @@ ggplot(women_combined_df, aes(x=Year, y=Ag)) +
     geom_vline(aes(xintercept=mean(Ag)), color="red", linetype="dashed", size=1)
   
   # Mean years of runners per race year
-  
   # Total - 22.66 years old
   mean(women_combined_df$Ag)
   
@@ -569,7 +621,6 @@ ggplot(women_combined_df, aes(x=Year, y=Ag)) +
   # If we re-plot the age distribution and ignore all ages younger than 18 due to the 2006 outlier, we get this distribution
   # There is some evidence that racers' ages are getting younger, but take note of the two outlier years in 2007 and 2002 where
   # ages were a bit older
-  
   Year_Sel <- c('1999','2000','2001','2002','2003','2004','2005','2006','2007','2008','2009','2010','2011','2012')
   women_combined_df %>% 
     filter(Ag > 18 & Year == Year_Sel) %>% 
@@ -588,5 +639,57 @@ ggplot(women_combined_df, aes(x=Year, y=Ag)) +
     geom_jitter() + 
     ggtitle("Women's Racers Ages - All Years - Scatter Plot")
   
+  ### Time
+  
+  # Box Plots - Net Race Times
+  # Mean times are increasing - big outlier in 2011
+  ggplot(women_combined_df, aes(x=Year, y=Net_Conv)) + 
+    geom_boxplot(outlier.colour="red", outlier.shape=8,
+                 outlier.size=4) +
+    ggtitle("Women's Racers Net Times - All Years")
 
-
+  # Mean years of runners per race year
+  # Total - 99.31 mins
+  mean(women_combined_df$Net_Conv)
+  
+  # 1999 - 95.49
+  mean(women_1999_df$Net_Conv)
+  
+  # 2000 - 93.91
+  mean(women_2000_df$Net_Conv)
+  
+  # 2001 - 94.65
+  mean(women_2001_df$Net_Conv)
+  
+  # 2002 - 95.94
+  mean(women_2002_df$Net_Conv)
+  
+  # 2003 - 95.54
+  mean(women_2003_df$Net_Conv)
+  
+  # 2004 - 96.70
+  mean(women_2004_df$Net_Conv)
+  
+  # 2005 - 98.59
+  mean(women_2005_df$Net_Conv)
+  
+  # 2006 - 98.15
+  mean(women_2006_df$Net_Conv)
+  
+  # 2007 - 97.16
+  mean(women_2007_df$Net_Conv)
+  
+  # 2008 - 98.77
+  mean(women_2008_df$Net_Conv)
+  
+  # 2009 - 98.80
+  mean(women_2009_df$Net_Conv)
+  
+  # 2010 - 99.92
+  mean(women_2010_df$Net_Conv)
+  
+  # 2011 - 109.90
+  mean(women_2011_df$Net_Conv)
+  
+  # 2012 - 99.02
+  mean(women_2012_df$Net_Conv)
