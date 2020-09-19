@@ -469,13 +469,35 @@ women_combined_df <- bind_rows(women_1999_df
                               ,women_2011_df
                               ,women_2012_df)
 
+# Check the format of each column in the dataframe
+sapply(women_combined_df, class)   
+
+# Convert age to numeric
+women_combined_df$Ag <- as.numeric(women_combined_df$Ag)
+women_combined_df$Ag[is.na(women_combined_df$Ag)] <- 0
+
 head(women_combined_df)
 tail(women_combined_df)
 
 
+#Box Plots
+boxplot(Ag~Year, data=women_combined_df, main="Ages over Years - Running stats", 
+        xlab="Years", ylab="Ages")
+
+# A lot of younger kids in 2006 many on the tail end of race times
 
 
 
+
+
+
+
+women_combined_df$ag <- as.numeric(as.character(women_combined_df$ag)) 
+
+
+
+
+qqnorm(data=dfData, dfData.age~year, pch=1, frame=FALSE)
 
 
 
