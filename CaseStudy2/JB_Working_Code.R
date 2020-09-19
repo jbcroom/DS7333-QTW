@@ -480,11 +480,12 @@ head(women_combined_df)
 tail(women_combined_df)
 
 
-#Box Plots
-boxplot(Ag~Year, data=women_combined_df, main="Ages over Years - Running stats", 
+# Box Plots
+# A lot of younger kids in 2006 many on the tail end of race times
+boxplot(Ag~Year, data=women_combined_df, main="Ages by Year - Combined DF", 
         xlab="Years", ylab="Ages")
 
-# A lot of younger kids in 2006 many on the tail end of race times
+
 
 
 
