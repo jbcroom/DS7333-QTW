@@ -648,7 +648,7 @@ ggplot(women_combined_df, aes(x=Year, y=Ag)) +
                  outlier.size=4) +
     ggtitle("Women's Racers Net Times - All Years")
 
-  # Mean years of runners per race year
+  # Mean times of runners per race year
   # Total - 99.31 mins
   mean(women_combined_df$Net_Conv)
   
@@ -693,3 +693,14 @@ ggplot(women_combined_df, aes(x=Year, y=Ag)) +
   
   # 2012 - 99.02
   mean(women_2012_df$Net_Conv)
+  
+  # Women's race time distribution
+  # We can see times are generally the same across years, except for the outlier year in 2011 which was slightly higher
+  Year_Sel <- c('1999','2000','2001','2002','2003','2004','2005','2006','2007','2008','2009','2010','2011','2012')
+  women_combined_df %>% 
+    filter(Net_Conv > 18 & Year == Year_Sel) %>% 
+    ggplot() + 
+    geom_density(aes(x = Net_Conv,group = factor(Year), fill=factor(Year), alpha = 0.5)) + 
+    ggtitle("Women's Race Time - All Years - Distribution") + 
+    labs(fill = "Year") +
+    geom_vline(aes(xintercept=mean(Ag)), color="red", linetype="dashed", size=1)
