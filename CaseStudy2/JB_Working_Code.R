@@ -696,6 +696,7 @@ ggplot(women_combined_df, aes(x=Year, y=Ag)) +
   
   # Women's race time distribution
   # We can see times are generally the same across years, except for the outlier year in 2011 which was slightly higher
+  # Race times have not changed over time, with the exception of the 2011 year
   Year_Sel <- c('1999','2000','2001','2002','2003','2004','2005','2006','2007','2008','2009','2010','2011','2012')
   women_combined_df %>% 
     filter(Net_Conv > 18 & Year == Year_Sel) %>% 
@@ -704,3 +705,42 @@ ggplot(women_combined_df, aes(x=Year, y=Ag)) +
     ggtitle("Women's Race Time - All Years - Distribution") + 
     labs(fill = "Year") +
     geom_vline(aes(xintercept=mean(Ag)), color="red", linetype="dashed", size=1)
+  
+  # group women's ages into groups
+  women_combined_df$Ag_grp <- ifelse(women_combined_df$Ag >= 0 & women_combined_df$Ag <= 17, '0-17',
+                    ifelse(women_combined_df$Ag >=18 & women_combined_df$Ag <=29, '18-29',
+                           ifelse(women_combined_df$Ag >=30, '30+', 'undefined')))
+  
+  # Age group data frames
+  women_combined_df_17 <- women_combined_df[women_combined_df$Ag_grp == '0-17',]
+  women_combined_df_29 <- women_combined_df[women_combined_df$Ag_grp == '18-29',]
+  women_combined_df_30 <- women_combined_df[women_combined_df$Ag_grp == '30+',]
+  women_combined_df_unf <- women_combined_df[women_combined_df$Ag_grp == 'undefined',]
+  
+  # Box Plots - Net Race Times - age buckets - 17
+  ggplot(women_combined_df_17, aes(x=Year, y=Net_Conv)) + 
+    geom_boxplot(outlier.colour="red", outlier.shape=8,
+                 outlier.size=4) +
+    ggtitle("Women's Racers Net Times - 0-17 Years Old - All Years")
+  mean(women_combined_df_17$Net_Conv)
+  # Mean - 97.69
+  
+  # Box Plots - Net Race Times - age buckets - 29
+  ggplot(women_combined_df_29, aes(x=Year, y=Net_Conv)) + 
+    geom_boxplot(outlier.colour="red", outlier.shape=8,
+                 outlier.size=4) +
+    ggtitle("Women's Racers Net Times - 18-29 Years Old - All Years")
+  mean(women_combined_df_29$Net_Conv)
+  # Mean - 99.15
+  
+  # Box Plots - Net Race Times - age buckets - 30
+  ggplot(women_combined_df_30, aes(x=Year, y=Net_Conv)) + 
+    geom_boxplot(outlier.colour="red", outlier.shape=8,
+                 outlier.size=4) +
+    ggtitle("Women's Racers Net Times - 30+ Years Old - All Years")
+  mean(women_combined_df_30$Net_Conv)
+  # Mean - 102.02
+  
+  # Two conclusions here:
+  # 1 - as racers age, their times decrease
+  # 2 - across all three age groups race times are increasing, gradually, year over year
