@@ -71,7 +71,7 @@ extractResTable =
   # and write lines or return as a character vector.
   # returns a list of strings corrsponding to lines in the web url
   function(url = "http://www.cherryblossom.org/results/2009/09cucb-F.htm",
-           year = 1999, sex = "male", file = NULL)
+           year = 1999, sex = "female", file = NULL)
   {
     doc = htmlParse(url)
     
@@ -672,18 +672,18 @@ MeanAge_df[nrow(MeanAge_df) + 1,] = c("Total",mean(women_combined_df$Ag))
 
 as.data.table(MeanAge_df)
 ```
-This table confirms the distribution plot and box plots above with respect to racers in 2006 skewing much younger for that year. Using the mean age of all races as 32, looking specifically at 2006 it can be seen that of the 5434 racers in 2006, 3784 of them were below the mean race age.
+This table confirms the distribution plot and box plots above with respect to racers in 2006 skewing much younger for that year. Using the mean age of all races as 22, looking specifically at 2006 it can be seen that of the 5435 racers in 2006, 3732 of them were below the mean race age.
 
 ```{r, echo=FALSE}
 
 # get total count of racers in 2006
 
 nrow(women_2006_df)
-# get number of racers under the mean of 32
+# get number of racers under the mean of 22
 
-nrow((women_2006_df[which(women_2006_df$Ag < 32), ]))
+nrow((women_2006_df[which(women_2006_df$Ag < 22), ]))
 ```
-Reevaluating the age data to account for the 2006 outlier the following distribution can be seen:
+Reevaluating the age data to account for the 2006 outlier (filtering for racers that are older than 18 years of age) the following distribution can be seen:
 
 ```{r, echo=FALSE,message=FALSE}
   # If we re-plot the age distribution and ignore all ages younger than 18 due to the 2006 outlier, we get this distribution
@@ -778,7 +778,7 @@ The distrubution chart below also reaffirms that 2011 was an outlier year.
 
 In conclusion the data on the Cherry Blossom race from 1999 through 2012 has provided some interesting insights. These insights should help race planners in evaluating any changes that may need to occur to maintain excitement about the race. 
 
-With respect to racers age, it was shown that the mean racers age of approximately 32 years old has remained consistent over time. There was a data anomaly in 2006 where many young racers performed in the race, however that anomaly was not seen in other years. 
+With respect to racers age, it was shown that the mean racers age of approximately 22 years old has remained consistent over time. There was a data anomaly in 2006 where many young racers performed in the race, however that anomaly was not seen in other years. 
 
 With respect to race completion times, like age, these too have remained fairly consistent over the 1999 through 2012 time period. The year 2011 was an outlier in this data and those results were not seen again in the data set. On average racers were finishing the the race in about 99 minutes. 
 
