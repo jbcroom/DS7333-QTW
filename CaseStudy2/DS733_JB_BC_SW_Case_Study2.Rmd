@@ -1,5 +1,791 @@
 ---
-title: "MSDS 7333 Fall 2020: Case Study 2"
+title: 'MSDS 7333 Fall 2020: Case Study 2'
 author: "Jayson Barker, Brandon Croom, Shane Winestock"
-output: html_document
+output:
+  pdf_document: default
+  html_document: default
 ---
+
+# Business Understanding
+
+The Cherry Blossom Ten Mile Run is an annual 10-mile race in Washington, D.C. The race was originally founded in 1973 and has been run continuously ever since. The race is meant to coincide with the bloom of the cherry blossoms in the DC area and is part of the National Cherry Blossom Festival. The race started as a training race for professional runners planning to compete in the Boston Marathon. Over the years the race has evolved into a race that attracts both professional and local runners of all levels. Evaluating this change in runners is a critical component for the race planners to understand how to position and market the race to attract participants. 
+
+This report focuses on the 1999 through 2012 years of the race. The goal is to specifically analyze female runners over the years to determine the answers to a few key questions that the race planners need for marketing purposes. Specifically the following questions will be addressed:
+
+* Have age distributions changed over time?
+* Have race times increased or decreased over time?
+* What trends should the planners be aware of that may occur in future years?
+
+# Data Acquisition
+
+In order to perform the analysis the data for races from 1999 through 2012 must be acquired. The easiest way to gather this data is through web scraping of the [Cherry Blossom](http://www.cherryblossom.org/) race website. The website contains web pages listing all of the race results through the specified time period.
+
+Web scraping has many aspects that must be taken into account when performed. First and foremost, the data must be allowed to be scraped from websites. The content of a website may be a revenue generation opportunity or built out content that the website owner has spent considerable time curating. When acquiring data from websites it must first be verified that the website allows scraping of the site's data. Scraping websites without site owner's consent may result in litigation if the data is presented without attribution and may be in violation of copyright laws. In this particular case, the data from the Cherry Blossom site is being presented to the race planners Since this data is for the race planners and is from the race website there are no legal implications present in scraping the website data for this analysis. 
+
+A second aspect that must be taken into account when scraping websites is understanding the data availability and working through the differences that may occur overtime with individual site webpages. In the Cherry Blossom case, the race results were housed on individual webpages for each race year. However, each year's webpages has subtle differences that required changes in the acquisition method to ensure the data was captured correctly. For example, some years of the Cherry Blossom race captured only race completion time, while others included completion time and gun time. The web scraping must be adapted to take all of these possible changes into account.
+
+In building out the specific web scraping capability leveraged for this analysis a few key items in the individual webpages needed to be addressed. Each webpage for each year is analyzed for key items that must be taken into account to ensure the data can be scraped in a consistent fashion. Each webpage uses equal marks ('=') as column header delimiters. The specific spacing for each column for each year must be accounted for to ensure the correct fields were consistently mapped. In addition the necessary webpage tags (the layout information for each individual webpage) much be searched to find the correct tag that contains the race results. The years 1999, 2000 and 2009 had different formatting for these tags than other years, thus special analysis was required to scrape these years to ensure consistent results. 
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE,results='hide'}
+# Load necessary libraries for analysis
+library(data.table)
+library(RCurl)
+library(XML)
+library(stringr)
+library(tidyr)
+library(urltools)
+library(rvest)
+library(dplyr)
+library(XML)
+library(ggplot2)
+
+# Build out the URL listing for scraping the website
+ubase = "http://www.cherryblossom.org/"
+
+womenURLs = 
+  c("results/1999/cb99f.html", 
+    "results/2000/Cb003f.htm", 
+    "results/2001/oof_f.html",
+    "results/2002/ooff.htm", 
+    "results/2003/CB03-F.HTM",
+    "results/2004/women.htm", 
+    "results/2005/CB05-F.htm", 
+    "results/2006/women.htm", 
+    "results/2007/women.htm", 
+    "results/2008/women.htm", 
+    "results/2009/09cucb-F.htm",
+    "results/2010/2010cucb10m-F.htm", 
+    "results/2011/2011cucb10m-F.htm",
+    "results/2012/2012cucb10m-F.htm")
+
+urls = paste(ubase, womenURLs, sep = "")
+
+urls[1:3]
+
+extractResTable =
+  # takes a list of websites from the cherry blossom race
+  # a list of years corresponding to the year the result is for
+  # and the gender of the participant
+  # Retrieve data from web site, 
+  # find the preformatted text,
+  # and write lines or return as a character vector.
+  # returns a list of strings corrsponding to lines in the web url
+  function(url = "http://www.cherryblossom.org/results/2009/09cucb-F.htm",
+           year = 1999, sex = "male", file = NULL)
+  {
+    doc = htmlParse(url)
+    
+    if (year == 2000) {
+      # Get preformatted text from 4th font element
+      # The top file is ill formed so the <pre> search doesn't work.
+      ff = getNodeSet(doc, "//font")
+      txt = xmlValue(ff[[4]])
+      els = strsplit(txt, "\r\n")[[1]]
+    }
+    else if (year == 2009 & sex == "male") {
+      # Get preformatted text from <div class="Section1"> element
+      # Each line of results is in a <pre> element
+      div1 = getNodeSet(doc, "//div[@class='Section1']")
+      pres = getNodeSet(div1[[1]], "//pre")
+      els = sapply(pres, xmlValue)
+      els = gsub("Â", " ", els)
+    }
+    else if (year == 1999) {
+      # Get preformatted text from <pre> elements
+      pres = getNodeSet(doc, "//pre")
+      txt = xmlValue(pres[[1]])
+      els = strsplit(txt, "\n")[[1]]   
+    } 
+    else {
+      # Get preformatted text from <pre> elements
+      pres = getNodeSet(doc, "//pre")
+      txt = xmlValue(pres[[1]])
+      els = strsplit(txt, "\r\n")[[1]]   
+    } 
+    
+    if (is.null(file)) return(els)
+    # Write the lines as a text file.
+    writeLines(els, con = file)
+  }
+
+years = 1999:2012
+urls = paste(ubase, womenURLs, sep = "")
+urls[1:3]
+womenTables = mapply(extractResTable, url = urls, year = years, sex='female')
+names(womenTables) = years
+sapply(womenTables, length)
+
+RecordCount_df <- data.frame(matrix(ncol = 2, nrow = 0))
+x <- c("Year", "Count")
+colnames(RecordCount_df) = x
+
+# 1999
+women_1999_lst <- womenTables[1]
+women_1999_lst <- lapply(women_1999_lst, function(x) {x[c(-1:-3)]})
+
+RecordCount_df[nrow(RecordCount_df) + 1,] = c("1999",lengths(women_1999_lst))
+#lengths(women_1999_lst) # 2356
+
+# Convert to dataframe
+women_1999_t = as.data.frame(women_1999_lst)
+women_1999_df <- data.frame(Place = substr(women_1999_t[1:2356,],1,5),
+                            DivTot =substr(women_1999_t[1:2356,],7,15),
+                            Name =substr(women_1999_t[1:2356,],17,37),
+                            Ag =substr(women_1999_t[1:2356,],39,40),
+                            Hometown =substr(women_1999_t[1:2356,],42,59),
+                            Time =substr(women_1999_t[1:2356,],61,67),
+                            Pace =substr(women_1999_t[1:2356,],69,73))
+
+# 2000
+women_2000_lst <- womenTables[2]
+women_2000_lst <- lapply(women_2000_lst, function(x) {x[c(-1:-2)]})
+
+RecordCount_df[nrow(RecordCount_df) + 1,] = c("2000",lengths(women_2000_lst))
+#lengths(women_2000_lst) # 2167
+
+# Convert to dataframe
+women_2000_t = as.data.frame(women_2000_lst)
+women_2000_df <- data.frame(Place = substr(women_2000_t[1:2166,],1,5),
+                            DivTot =substr(women_2000_t[1:2166,],7,15),
+                            Num =substr(women_2000_t[1:2166,],17,21),
+                            Name =substr(women_2000_t[1:2166,],23,43),
+                            Ag =substr(women_2000_t[1:2166,],45,46),
+                            Hometown =substr(women_2000_t[1:2166,],48,65),
+                            Gun =substr(women_2000_t[1:2166,],67,73),
+                            Net =substr(women_2000_t[1:2166,],75,82))
+
+# 2001
+women_2001_lst <- womenTables[3]
+women_2001_lst <- lapply(women_2001_lst, function(x) {x[c(-1:-3)]})
+RecordCount_df[nrow(RecordCount_df) + 1,] = c("2001",lengths(women_2001_lst))
+#lengths(women_2001_lst) # 2973
+
+# Convert to dataframe
+women_2001_t = as.data.frame(women_2001_lst)
+women_2001_df <- data.frame(Place = substr(women_2001_t[1:2972,],1,5),
+                            Num =substr(women_2001_t[1:2972,],7,11),
+                            Name =substr(women_2001_t[1:2972,],13,33),
+                            Ag =substr(women_2001_t[1:2972,],35,36),
+                            Hometown =substr(women_2001_t[1:2972,],38,55),
+                            Net =substr(women_2001_t[1:2972,],57,63),
+                            Gun =substr(women_2001_t[1:2972,],65,71))
+
+# 2002
+women_2002_lst <- womenTables[4]
+women_2002_lst <- lapply(women_2002_lst, function(x) {x[c(-1:-3)]})
+RecordCount_df[nrow(RecordCount_df) + 1,] = c("2002",lengths(women_2002_lst))
+#lengths(women_2002_lst) # 3334
+
+# Convert to dataframe
+women_2002_t = as.data.frame(women_2002_lst)
+women_2002_df <- data.frame(Place = substr(women_2002_t[1:3334,],1,5),
+                            Num =substr(women_2002_t[1:3334,],7,11),
+                            Name =substr(women_2002_t[1:3334,],13,33),
+                            Ag =substr(women_2002_t[1:3334,],35,36),
+                            Hometown =substr(women_2002_t[1:3334,],38,55),
+                            Net =substr(women_2002_t[1:3334,],57,63),
+                            Gun =substr(women_2002_t[1:3334,],65,71))
+
+# 2003
+women_2003_lst <- womenTables[5]
+women_2003_lst <- lapply(women_2003_lst, function(x) {x[c(-1:-3)]})
+RecordCount_df[nrow(RecordCount_df) + 1,] = c("2003",lengths(women_2003_lst))
+#lengths(women_2003_lst) # 3543
+
+# Convert to dataframe
+women_2003_t = as.data.frame(women_2003_lst)
+women_2003_df <- data.frame(Place = substr(women_2003_t[1:3542,],1,5),
+                            DivTot =substr(women_2003_t[1:3542,],7,15),
+                            Num =substr(women_2003_t[1:3542,],17,21),
+                            Name =substr(women_2003_t[1:3542,],23,52),
+                            Ag =substr(women_2003_t[1:3542,],54,55),
+                            Hometown =substr(women_2003_t[1:3542,],57,75),
+                            GunTime =substr(women_2003_t[1:3542,],77,83),
+                            NetTime =substr(women_2003_t[1:3542,],85,92))
+
+# 2004
+women_2004_lst <- womenTables[6]
+women_2004_lst <- lapply(women_2004_lst, function(x) {x[c(-1:-4)]})
+RecordCount_df[nrow(RecordCount_df) + 1,] = c("2004",lengths(women_2004_lst))
+#lengths(women_2004_lst) # 3903
+
+# Convert to dataframe
+women_2004_t = as.data.frame(women_2004_lst)
+women_2004_df <- data.frame(Place = substr(women_2004_t[5:3899,],1,5),
+                            DivTot =substr(women_2004_t[5:3899,],7,15),
+                            Num =substr(women_2004_t[5:3899,],17,21),
+                            Name =substr(women_2004_t[5:3899,],23,51),
+                            Ag =substr(women_2004_t[5:3899,],53,54),
+                            Hometown =substr(women_2004_t[5:3899,],56,74),
+                            Net =substr(women_2004_t[5:3899,],76,82),
+                            Gun =substr(women_2004_t[5:3899,],84,90))
+
+
+# 2005
+women_2005_lst <- womenTables[7]
+women_2005_lst <- lapply(women_2005_lst, function(x) {x[c(-1:-4)]})
+RecordCount_df[nrow(RecordCount_df) + 1,] = c("2005",lengths(women_2005_lst))
+#lengths(women_2005_lst) # 4338
+
+# Convert to dataframe
+women_2005_t = as.data.frame(women_2005_lst)
+women_2005_df <- data.frame(Place = substr(women_2005_t[5:4337,],1,5),
+                            DivTot =substr(women_2005_t[5:4337,],7,15),
+                            Name =substr(women_2005_t[5:4337,],17,38),
+                            Ag =substr(women_2005_t[5:4337,],40,41),
+                            Hometown =substr(women_2005_t[5:4337,],43,60),
+                            Net =substr(women_2005_t[5:4337,],62,68),
+                            Gun =substr(women_2005_t[5:4337,],70,76),
+                            Pace =substr(women_2005_t[5:4337,],78,82))
+
+# 2006
+women_2006_lst <- womenTables[8]
+women_2006_lst <- lapply(women_2006_lst, function(x) {x[c(-1:-4)]})
+RecordCount_df[nrow(RecordCount_df) + 1,] = c("2006",lengths(women_2006_lst))
+#lengths(women_2006_lst) # 5441
+
+# Convert to dataframe
+women_2006_t = as.data.frame(women_2006_lst)
+women_2006_df <- data.frame(Place = substr(women_2006_t[5:5439,],1,5),
+                            DivTot =substr(women_2006_t[5:5439,],7,14),
+                            Num =substr(women_2006_t[5:5439,],16,21),
+                            Name =substr(women_2006_t[5:5439,],23,44),
+                            Ag =substr(women_2006_t[5:5439,],46,47),
+                            Hometown =substr(women_2006_t[5:5439,],49,64),
+                            NetTime =substr(women_2006_t[5:5439,],65,72),
+                            GunTime =substr(women_2006_t[5:5439,],73,80),
+                            Pace =substr(women_2006_t[5:5439,],82,87),
+                            S =substr(women_2006_t[5:5439,],88,88))
+
+
+# 2007
+women_2007_lst <- womenTables[9]
+women_2007_lst <- lapply(women_2007_lst, function(x) {x[c(-1:-3)]})
+RecordCount_df[nrow(RecordCount_df) + 1,] = c("2007",lengths(women_2007_lst))
+#lengths(women_2007_lst) # 5695
+
+women_2007_t = as.data.frame(women_2007_lst)
+women_2007_df <- data.frame(Place = substr(women_2007_t[5:5694,],1,5),
+                            DivTot =substr(women_2007_t[5:5694,],7,17),
+                            Num =substr(women_2007_t[5:5694,],19,24),
+                            Name =substr(women_2007_t[5:5694,],26,47),
+                            Ag =substr(women_2007_t[5:5694,],49,50),
+                            Hometown =substr(women_2007_t[5:5694,],52,69),
+                            Time =substr(women_2007_t[5:5694,],71,77),
+                            Pace =substr(women_2007_t[5:5694,],79,84),
+                            S =substr(women_2007_t[5:5694,],86,86),
+                            Split =substr(women_2007_t[5:5694,],88,94))
+
+
+# 2008
+women_2008_lst <- womenTables[10]
+women_2008_lst <- lapply(women_2008_lst, function(x) {x[c(-1:-4)]})
+RecordCount_df[nrow(RecordCount_df) + 1,] = c("2008",lengths(women_2008_lst))
+#lengths(women_2008_lst) # 6401
+
+women_2008_t = as.data.frame(women_2008_lst)
+women_2008_df <- data.frame(Place = substr(women_2008_t[5:6401,],1,5),
+                            DivTot =substr(women_2008_t[5:6401,],7,17),
+                            Num =substr(women_2008_t[5:6401,],19,24),
+                            Name =substr(women_2008_t[5:6401,],26,47),
+                            Ag =substr(women_2008_t[5:6401,],49,50),
+                            Hometown =substr(women_2008_t[5:6401,],52,69),
+                            FiveMile =substr(women_2008_t[5:6401,],71,77),
+                            Pace =substr(women_2008_t[5:6401,],79,83),
+                            TenKM =substr(women_2008_t[5:6401,],85,91),
+                            Pace2 =substr(women_2008_t[5:6401,],94,97),
+                            Time =substr(women_2008_t[5:6401,],99,105),
+                            Pace3 =substr(women_2008_t[5:6401,],107,111))
+
+
+# 2009
+women_2009_lst <- womenTables[11]
+women_2009_lst <- lapply(women_2009_lst, function(x) {x[c(-1:-4)]})
+RecordCount_df[nrow(RecordCount_df) + 1,] = c("2009",lengths(women_2009_lst))
+#lengths(women_2009_lst) # 8329
+
+women_2009_t = as.data.frame(women_2009_lst)
+women_2009_df <- data.frame(Place = substr(women_2009_t[5:8327,],1,5),
+                            DivTot =substr(women_2009_t[5:8327,],7,17),
+                            Num =substr(women_2009_t[5:8327,],19,24),
+                            Name =substr(women_2009_t[5:8327,],26,47),
+                            Ag =substr(women_2009_t[5:8327,],49,50),
+                            Hometown =substr(women_2009_t[5:8327,],52,71),
+                            Gun_Time =substr(women_2009_t[5:8327,],73,79),
+                            NetTime =substr(women_2009_t[5:8327,],81,87),
+                            Pace =substr(women_2009_t[5:8327,],89,94),
+                            S =substr(women_2009_t[5:8327,],96,96))
+
+
+### 2010
+women_2010_lst <- womenTables[12]
+women_2010_lst <- lapply(women_2010_lst, function(x) {x[c(-1:-4)]})
+RecordCount_df[nrow(RecordCount_df) + 1,] = c("2010",lengths(women_2010_lst))
+#lengths(women_2010_lst) # 8859
+
+# Convert to dataframe
+women_2010_t = as.data.frame(women_2010_lst)
+women_2010_df <- data.frame(Place = substr(women_2010_t[5:8857,],1,5),
+                            DivTot =substr(women_2010_t[5:8857,],7,17),
+                            Num =substr(women_2010_t[5:8857,],19,24),
+                            Name =substr(women_2010_t[5:8857,],26,47),
+                            Ag =substr(women_2010_t[5:8857,],49,50),
+                            Hometown =substr(women_2010_t[5:8857,],52,71),
+                            Five_Mile =substr(women_2010_t[5:8857,],73,79),
+                            GunTime =substr(women_2010_t[5:8857,],81,87),
+                            NetTime =substr(women_2010_t[5:8857,],89,96),
+                            Pace =substr(women_2010_t[5:8857,],98,102),
+                            S =substr(women_2010_t[5:8857,],104,104))
+
+
+#### 2011
+women_2011_lst <- womenTables[13]
+women_2011_lst <- lapply(women_2011_lst, function(x) {x[c(-1:-4)]})
+RecordCount_df[nrow(RecordCount_df) + 1,] = c("2011",lengths(women_2011_lst))
+#lengths(women_2011_lst) # 9034
+
+# Convert to dataframe
+women_2011_t = as.data.frame(women_2011_lst)
+women_2011_df <- data.frame(Place = substr(women_2011_t[5:9034,],1,5),
+                            DivTot =substr(women_2011_t[5:9034,],7,17),
+                            Num =substr(women_2011_t[5:9034,],19,24),
+                            Name =substr(women_2011_t[5:9034,],26,47),
+                            Ag =substr(women_2011_t[5:9034,],49,50),
+                            Hometown =substr(women_2011_t[5:9034,],52,71),
+                            Five_Mile =substr(women_2011_t[5:9034,],73,79),
+                            Time =substr(women_2011_t[5:9034,],81,87),
+                            NetTime =substr(women_2011_t[5:9034,],89,96),
+                            Pace =substr(women_2011_t[5:9034,],98,101),
+                            S =substr(women_2011_t[5:9034,],103,103))
+
+
+
+### 2012
+women_2012_lst <- womenTables[14]
+women_2012_lst <- lapply(women_2012_lst, function(x) {x[c(-1,-2,-3,-4)]})
+RecordCount_df[nrow(RecordCount_df) + 1,] = c("2012",lengths(women_2012_lst))
+#lengths(women_2012_lst) # 9733
+
+# Convert to dataframe
+women_2012_t = as.data.frame(women_2012_lst)
+women_2012_df <- data.frame(Place = substr(women_2012_t[5:9733,],1,5),
+                  DivTot =substr(women_2012_t[5:9733,],7,17),
+                  Num =substr(women_2012_t[5:9733,],19,24),
+                  Name =substr(women_2012_t[5:9733,],26,47),
+                  Ag =substr(women_2012_t[5:9733,],49,50),
+                  Hometown =substr(women_2012_t[5:9733,],52,71),
+                  Five_Mile =substr(women_2012_t[5:9733,],73,79),
+                  Time =substr(women_2012_t[5:9733,],81,87),
+                  Pace =substr(women_2012_t[5:9733,],89,93),
+                  S =substr(women_2012_t[5:9733,],95,95))
+
+```
+
+The results of scraping the Cherry Blossom site for the women's results provides us the following record counts for the years in question. This information provides an initial check that the web scraping is working as expected and provides an individual record set by year for initial data cleansing.
+
+```{r, echo=FALSE}
+as.data.table(RecordCount_df)
+
+```
+
+
+# Data Cleaning
+
+Now that the data has been broken down into individual record sets for each year, an initial look at the data structure for each individual record set is warranted. This will ensure that data mapped into the data sets represents the correct data types for the values that are expected to be pulled from the data. Since all individual record sets are pulled in the same format evaluating the 2000 record set will provide a quick indication that data was mapped correctly.
+
+```{r}
+sapply(women_2000_df,class)
+```
+From the above information it can be seen that every field is being read as a character field. Given that the data is being scraped from the web, this makes sense. Data conversion will be necessary to the respective data types as individual record sets are combined into a full record set. 
+
+
+The evaluation of missing data is another items that is best addressed at the individual record set level. Performing missing data checks at this level makes addressing them much easier prior to combining the data into a full record data set. The table below shows the results of missing data analysis for each of the individual record sets. 
+
+
+```{r, echo=FALSE}
+MissingCount_df <- data.frame(matrix(ncol = 2, nrow = 0))
+x <- c("Year", "Count")
+colnames(MissingCount_df) = x
+
+MissingCount_df[nrow(MissingCount_df) + 1,] = c("1999",sum(is.na(women_1999_df)))
+MissingCount_df[nrow(MissingCount_df) + 1,] = c("2000",sum(is.na(women_2000_df)))
+MissingCount_df[nrow(MissingCount_df) + 1,] = c("2001",sum(is.na(women_2001_df)))
+MissingCount_df[nrow(MissingCount_df) + 1,] = c("2002",sum(is.na(women_2002_df)))
+MissingCount_df[nrow(MissingCount_df) + 1,] = c("2003",sum(is.na(women_2003_df)))
+MissingCount_df[nrow(MissingCount_df) + 1,] = c("2004",sum(is.na(women_2004_df)))
+MissingCount_df[nrow(MissingCount_df) + 1,] = c("2005",sum(is.na(women_2005_df)))
+MissingCount_df[nrow(MissingCount_df) + 1,] = c("2006",sum(is.na(women_2006_df)))
+MissingCount_df[nrow(MissingCount_df) + 1,] = c("2007",sum(is.na(women_2007_df)))
+MissingCount_df[nrow(MissingCount_df) + 1,] = c("2008",sum(is.na(women_2008_df)))
+MissingCount_df[nrow(MissingCount_df) + 1,] = c("2009",sum(is.na(women_2009_df)))
+MissingCount_df[nrow(MissingCount_df) + 1,] = c("2010",sum(is.na(women_2010_df)))
+MissingCount_df[nrow(MissingCount_df) + 1,] = c("2011",sum(is.na(women_2011_df)))
+MissingCount_df[nrow(MissingCount_df) + 1,] = c("2012",sum(is.na(women_2012_df)))
+
+as.data.table(MissingCount_df)
+
+
+```
+From the table above, there is no data missing in the records. This shows that the data entered in to the web site is complete and that the data scraping methodology worked as expected. 
+
+As previously noted, the individual record sets have all data defined as characters. The time values (Gun, Net) and the age values need to be converted to numeric data types to ensure further analysis is correct. At the same time all of the data needs to be merged into a single record set containing all years. As part of this merging, a new data field for race time (Net_Conv) will be created. This data field will contain the race time converted to minutes. Just as with the individual record sets the evaluation of data types and missing values for the combined record set will occur to ensure data is ready for analysis. 
+
+```{r,echo=FALSE,message=FALSE,results='hide',warning=FALSE}
+
+# Function to convert time to a decimal so we can interpret it
+convertTime = function(time) {
+  timePieces = strsplit(time, ":")
+  timePieces = sapply(timePieces, as.numeric)
+  sapply(timePieces, function(x) {
+    if (length(x) == 2) x[1] + x[2]/60
+    else 60*x[1] + x[2] + x[3]/60
+  })
+}
+
+
+# Time / 10 = pace
+# Combine all dataframes into a single common dataframe
+women_1999_df[,"Year"] <- "1999"
+women_1999_df[,"Net"] <- women_1999_df[,"Time"]
+women_1999_df <- women_1999_df[,c("Year","Place","DivTot","Name","Ag","Hometown","Net","Pace")]
+women_1999_df$Ag <- as.numeric(women_1999_df$Ag)
+# Time conversion
+women_1999_df$Net <- as.character(women_1999_df$Net)
+women_1999_df$Net_Conv = convertTime(women_1999_df$Net)
+women_1999_df <- na.omit(women_1999_df)
+
+women_2000_df[,"Year"] <- "2000"
+women_2000_df[,"Pace"] <- "0"
+women_2000_df <- women_2000_df[,c("Year","Place","DivTot","Name","Ag","Hometown","Net","Pace")]
+women_2000_df$Ag <- as.numeric(women_2000_df$Ag)
+# Time conversion
+women_2000_df$Net <- as.character(women_2000_df$Net)
+women_2000_df$Net_Conv = convertTime(women_2000_df$Net)
+women_2000_df <- na.omit(women_2000_df)
+
+women_2001_df[,"Year"] <- "2001"
+women_2001_df[,"DivTot"] <- "0"
+women_2001_df[,"Pace"] <- "0"
+women_2001_df <- women_2001_df[,c("Year","Place","DivTot","Name","Ag","Hometown","Net","Pace")]
+women_2001_df$Ag <- as.numeric(women_2001_df$Ag)
+# Time conversion
+women_2001_df$Net <- as.character(women_2001_df$Net)
+women_2001_df$Net_Conv = convertTime(women_2001_df$Net)
+women_2001_df <- na.omit(women_2001_df)
+
+women_2002_df[,"Year"] <- "2002"
+women_2002_df[,"DivTot"] <- "0"
+women_2002_df[,"Pace"] <- "0"
+women_2002_df <- women_2002_df[,c("Year","Place","DivTot","Name","Ag","Hometown","Net","Pace")]
+women_2002_df$Ag <- as.numeric(women_2002_df$Ag)
+# Time conversion
+women_2002_df$Net <- as.character(women_2002_df$Net)
+women_2002_df$Net_Conv = convertTime(women_2002_df$Net)
+women_2002_df <- na.omit(women_2002_df)
+
+women_2003_df[,"Year"] <- "2003"
+women_2003_df[,"Pace"] <- "0"
+women_2003_df[,"Net"] <- women_2003_df[,"NetTime"]
+women_2003_df <- women_2003_df[,c("Year","Place","DivTot","Name","Ag","Hometown","Net","Pace")]
+women_2003_df$Ag <- as.numeric(women_2003_df$Ag)
+# Time conversion
+women_2003_df$Net <- as.character(women_2003_df$Net)
+women_2003_df$Net_Conv = convertTime(women_2003_df$Net)
+women_2003_df <- na.omit(women_2003_df)
+
+women_2004_df[,"Year"] <- "2004"
+women_2004_df[,"Pace"] <- "0"
+women_2004_df <- women_2004_df[,c("Year","Place","DivTot","Name","Ag","Hometown","Net","Pace")]
+women_2004_df$Ag <- as.numeric(women_2004_df$Ag)
+# Time conversion
+women_2004_df$Net <- as.character(women_2004_df$Net)
+women_2004_df$Net_Conv = convertTime(women_2004_df$Net)
+women_2004_df <- na.omit(women_2004_df)
+
+women_2005_df[,"Year"] <- "2005"
+women_2005_df <- women_2005_df[,c("Year","Place","DivTot","Name","Ag","Hometown","Net","Pace")]
+women_2005_df$Ag <- as.numeric(women_2005_df$Ag)
+# Time conversion
+women_2005_df$Net <- as.character(women_2005_df$Net)
+women_2005_df$Net_Conv = convertTime(women_2005_df$Net)
+women_2005_df <- na.omit(women_2005_df)
+
+women_2006_df[,"Year"] <- "2006"
+women_2006_df[,"Net"] <- women_2006_df[,"NetTime"]
+women_2006_df <- women_2006_df[,c("Year","Place","DivTot","Name","Ag","Hometown","Net","Pace")]
+women_2006_df$Ag <- as.numeric(women_2006_df$Ag)
+# Time conversion
+women_2006_df$Net <- as.character(women_2006_df$Net)
+women_2006_df$Net_Conv = convertTime(women_2006_df$Net)
+women_2006_df <- na.omit(women_2006_df)
+
+women_2007_df[,"Year"] <- "2007"
+women_2007_df[,"Net"] <- women_2007_df[,"Time"]
+women_2007_df <- women_2007_df[,c("Year","Place","DivTot","Name","Ag","Hometown","Net","Pace")]
+women_2007_df$Ag <- as.numeric(women_2007_df$Ag)
+# Time conversion
+women_2007_df$Net <- as.character(women_2007_df$Net)
+women_2007_df$Net_Conv = convertTime(women_2007_df$Net)
+women_2007_df <- na.omit(women_2007_df)
+
+women_2008_df[,"Year"] <- "2008"
+women_2008_df[,"Pace"] <- women_2008_df[,"Pace3"]
+women_2008_df[,"Net"] <- women_2008_df[,"Time"]
+women_2008_df <- women_2008_df[,c("Year","Place","DivTot","Name","Ag","Hometown","Net","Pace")]
+women_2008_df$Ag <- as.numeric(women_2008_df$Ag)
+# Time conversion
+women_2008_df$Net <- as.character(women_2008_df$Net)
+women_2008_df$Net_Conv = convertTime(women_2008_df$Net)
+women_2008_df <- na.omit(women_2008_df)
+
+women_2009_df[,"Year"] <- "2009"
+women_2009_df[,"Net"] <- women_2009_df[,"NetTime"]
+women_2009_df <- women_2009_df[,c("Year","Place","DivTot","Name","Ag","Hometown","Net","Pace")]
+women_2009_df$Ag <- as.numeric(women_2009_df$Ag)
+# Time conversion
+women_2009_df$Net <- as.character(women_2009_df$Net)
+women_2009_df$Net_Conv = convertTime(women_2009_df$Net)
+women_2009_df <- na.omit(women_2009_df)
+
+women_2010_df[,"Year"] <- "2010"
+women_2010_df[,"Net"] <- women_2010_df[,"NetTime"]
+women_2010_df <- women_2010_df[,c("Year","Place","DivTot","Name","Ag","Hometown","Net","Pace")]
+women_2010_df$Ag <- as.numeric(women_2010_df$Ag)
+# Time conversion
+women_2010_df$Net <- as.character(women_2010_df$Net)
+women_2010_df$Net_Conv = convertTime(women_2010_df$Net)
+women_2010_df <- na.omit(women_2010_df)
+
+women_2011_df[,"Year"] <- "2011"
+women_2011_df[,"Net"] <- women_2011_df[,"Time"]
+women_2011_df <- women_2011_df[,c("Year","Place","DivTot","Name","Ag","Hometown","Net","Pace")]
+women_2011_df$Ag <- as.numeric(women_2011_df$Ag)
+# Time conversion
+women_2011_df$Net <- as.character(women_2011_df$Net)
+women_2011_df$Net_Conv = convertTime(women_2011_df$Net)
+women_2011_df <- na.omit(women_2011_df)
+
+women_2012_df[,"Year"] <- "2012"
+women_2012_df[,"Net"] <- women_2012_df[,"Time"]
+women_2012_df <- women_2012_df[,c("Year","Place","DivTot","Name","Ag","Hometown","Net","Pace")]
+women_2012_df$Ag <- as.numeric(women_2012_df$Ag)
+# Time conversion
+women_2012_df$Net <- as.character(women_2012_df$Net)
+women_2012_df$Net_Conv = convertTime(women_2012_df$Net)
+women_2012_df <- na.omit(women_2012_df)
+
+# Combined women dataframe
+women_combined_df <- bind_rows(women_1999_df
+                              ,women_2000_df
+                              ,women_2001_df
+                              ,women_2002_df
+                              ,women_2003_df
+                              ,women_2004_df
+                              ,women_2005_df
+                              ,women_2006_df
+                              ,women_2007_df
+                              ,women_2008_df
+                              ,women_2009_df
+                              ,women_2010_df
+                              ,women_2011_df
+                              ,women_2012_df)
+
+```
+Checking the combined record set data types, as noted below, all values are now more indicative of the respective data column. Age (Ag) is now numeric and the race time (Net_Conv) is also numeric. 
+
+```{r, echo=FALSE}
+sapply(women_combined_df, class) 
+
+```
+Evaluating the data for missing values produces the following results:
+```{r, echo=FALSE}
+
+MissCount_df <- data.frame(matrix(ncol = 1, nrow = 0))
+x <- c("Count Missing")
+colnames(MissCount_df) = x
+
+MissCount_df[nrow(MissCount_df) + 1,] = c(sum(is.na(women_combined_df)))
+
+as.data.table(MissCount_df)
+```
+
+Based on the missing value check, it can be seen that the data has remained intact throughout the transformations. One additional check to provide summary statistics of the data will be performed prior to beginning analysis. This summary statistics check provides another sanity check for data evaluation.
+
+```{r, echo=FALSE}
+summary(women_combined_df)
+```
+The summary statistics above reconfirm the information that was expected. The character fields should not have an statistical values. Additionally, the Age (Ag) and race time (Net_Conv) fields do show reasonable statistical values. It should be noted that the Age (Ag) field does show a minimum value of 0.00. This indicates that there may be incorrect data input into the age field for some runners or that the data was omitted. Evaluating the combined record set to pick out zero age record results in the data shown below. 
+
+```{r, echo=FALSE}
+women_combined_df[which(women_combined_df$Ag == min(women_combined_df$Ag)), ]
+
+```
+
+Evaluation of the race results web page for the 2001 race does confirm that the age entered for this individual was 0. As such this should be treated as an invalid data point, with respect to age.
+
+# Data Analysis
+
+Now that the data has been scraped and cleaned for analysis, the process of answering the requested business questions can begin. The initial analysis will start with an analysis of racers ages over time. It will then move into the evaluation of race completion times over time. 
+
+## Age Analysis
+
+```{r, echo=FALSE}
+ggplot(women_combined_df, aes(x=Year, y=Ag)) + 
+  geom_boxplot(outlier.colour="red", outlier.shape=8,
+               outlier.size=4) +
+  ggtitle("Women's Racers Ages - All Years")
+```
+From the box plot it can be seen that 2006 had a lot of younger racers compared to the other years. Additionally, in 2006 many of these younger racers were at the tail end of the race times. This could indicate an influx of non-professional runners during the race for that year. 
+
+Diving into the distribution of ages across the race years the plot below shows a bimodal distribution of ages. This distribution reaffirms the large number of younger racers seen in 2006. 
+
+```{r, echo=FALSE}
+  ggplot(women_combined_df) + 
+    geom_density(aes(x = Ag), alpha = 0.7,color="green", fill="lightgreen") + 
+    ggtitle("Women's Racers Age Distribution - All Years") + 
+    geom_vline(aes(xintercept=mean(Ag)), color="red", linetype="dashed", size=1)
+```
+
+Continuing to evaluae runners ages the data provides an opportunity to evaluate mean age by race year as shown in the table below.
+```{r,echo=FALSE}
+
+
+MeanAge_df <- data.frame(matrix(ncol = 2, nrow = 0))
+x <- c("Year", "Mean Age")
+colnames(MeanAge_df) = x
+
+MeanAge_df[nrow(MeanAge_df) + 1,] = c("1999",mean(women_1999_df$A))
+MeanAge_df[nrow(MeanAge_df) + 1,] = c("2000",mean(women_2000_df$A))
+MeanAge_df[nrow(MeanAge_df) + 1,] = c("2001",mean(women_2001_df$A))
+MeanAge_df[nrow(MeanAge_df) + 1,] = c("2002",mean(women_2002_df$A))
+MeanAge_df[nrow(MeanAge_df) + 1,] = c("2003",mean(women_2003_df$A))
+MeanAge_df[nrow(MeanAge_df) + 1,] = c("2004",mean(women_2004_df$A))
+MeanAge_df[nrow(MeanAge_df) + 1,] = c("2005",mean(women_2005_df$A))
+MeanAge_df[nrow(MeanAge_df) + 1,] = c("2006",mean(women_2006_df$A))
+MeanAge_df[nrow(MeanAge_df) + 1,] = c("2007",mean(women_2007_df$A))
+MeanAge_df[nrow(MeanAge_df) + 1,] = c("2008",mean(women_2008_df$A))
+MeanAge_df[nrow(MeanAge_df) + 1,] = c("2009",mean(women_2009_df$A))
+MeanAge_df[nrow(MeanAge_df) + 1,] = c("2010",mean(women_2010_df$A))
+MeanAge_df[nrow(MeanAge_df) + 1,] = c("2011",mean(women_2011_df$A))
+MeanAge_df[nrow(MeanAge_df) + 1,] = c("2012",mean(women_2012_df$A))
+MeanAge_df[nrow(MeanAge_df) + 1,] = c("Total",mean(women_combined_df$Ag))
+
+as.data.table(MeanAge_df)
+```
+This table confirms the distribution plot and box plots above with respect to racers in 2006 skewing much younger for that year. Using the mean age of all races as 32, looking specifically at 2006 it can be seen that of the 5434 racers in 2006, 3784 of them were below the mean race age.
+
+```{r, echo=FALSE}
+
+# get total count of racers in 2006
+
+nrow(women_2006_df)
+# get number of racers under the mean of 32
+
+nrow((women_2006_df[which(women_2006_df$Ag < 32), ]))
+```
+Reevaluating the age data to account for the 2006 outlier the following distribution can be seen:
+
+```{r, echo=FALSE,message=FALSE}
+  # If we re-plot the age distribution and ignore all ages younger than 18 due to the 2006 outlier, we get this distribution
+  # There is some evidence that racers' ages are getting younger, but take note of the two outlier years in 2007 and 2002 where
+  # ages were a bit older
+  Year_Sel <- c('1999','2000','2001','2002','2003','2004','2005','2006','2007','2008','2009','2010','2011','2012')
+  women_combined_df %>% 
+    filter(Ag > 18 & Year == Year_Sel) %>% 
+    ggplot() + 
+    geom_density(aes(x = Ag,group = factor(Year), fill=factor(Year), alpha = 0.5)) + 
+    ggtitle("Women's Racers Age Distribution - All Years - Distribution") + 
+    labs(fill = "Year") +
+    geom_vline(aes(xintercept=mean(Ag)), color="red", linetype="dashed", size=1)
+```
+Accounting for the extremely young outliers in the distribution above it can be seen that there is still some skew towards younger ages. The outliers in this case are 2002 and 2007 where ages were actually a bit older. Leveraging the same data in the scatter plot below it can be seen that there is a stronger concentration of ages in the 2009-2012 year range compared to previous years. This could indicate that more racers are entering the race. 
+
+
+
+```{r, echo=FALSE,message=FALSE}
+  # Scatter Plot - this plot, filtered for ages > 18, clearly shows a stronger concentration of ages in the 2009 - 2012 year range compared
+  # to previous years
+  women_combined_df %>% 
+    filter(Ag > 18 & Year == Year_Sel) %>% 
+    ggplot(map=aes(Year,Ag))+
+    geom_point()+
+    geom_jitter() + 
+    ggtitle("Women's Racers Ages - All Years - Scatter Plot")
+
+```
+
+## Time Analysis
+
+Just as with the age data there are interesting trends the emerge when evaluating race time data. A simple box plot of race times begins to show some of these points of interest. In the box plot below of Net Race times over all years it can be seen that on average the race times were consistent in all years except for 2011.
+
+```{r,echo=FALSE,message=FALSE}
+  # Box Plots - Net Race Times
+  # Mean times are increasing - big outlier in 2011
+  ggplot(women_combined_df, aes(x=Year, y=Net_Conv)) + 
+    geom_boxplot(outlier.colour="red", outlier.shape=8,
+                 outlier.size=4) +
+    ggtitle("Women's Racers Net Times - All Years")
+```
+
+Digging deeper into mean runner time provides the following table:
+
+```{r,echo=FALSE,message=FALSE}
+MeanTime_df <- data.frame(matrix(ncol = 2, nrow = 0))
+x <- c("Year", "Mean Time")
+colnames(MeanTime_df) = x
+
+MeanTime_df[nrow(MeanTime_df) + 1,] = c("1999",mean(women_1999_df$Net_Conv))
+MeanTime_df[nrow(MeanTime_df) + 1,] = c("2000",mean(women_2000_df$Net_Conv))
+MeanTime_df[nrow(MeanTime_df) + 1,] = c("2001",mean(women_2001_df$Net_Conv))
+MeanTime_df[nrow(MeanTime_df) + 1,] = c("2002",mean(women_2002_df$Net_Conv))
+MeanTime_df[nrow(MeanTime_df) + 1,] = c("2003",mean(women_2003_df$Net_Conv))
+MeanTime_df[nrow(MeanTime_df) + 1,] = c("2004",mean(women_2004_df$Net_Conv))
+MeanTime_df[nrow(MeanTime_df) + 1,] = c("2005",mean(women_2005_df$Net_Conv))
+MeanTime_df[nrow(MeanTime_df) + 1,] = c("2006",mean(women_2006_df$Net_Conv))
+MeanTime_df[nrow(MeanTime_df) + 1,] = c("2007",mean(women_2007_df$Net_Conv))
+MeanTime_df[nrow(MeanTime_df) + 1,] = c("2008",mean(women_2008_df$Net_Conv))
+MeanTime_df[nrow(MeanTime_df) + 1,] = c("2009",mean(women_2009_df$Net_Conv))
+MeanTime_df[nrow(MeanTime_df) + 1,] = c("2010",mean(women_2010_df$Net_Conv))
+MeanTime_df[nrow(MeanTime_df) + 1,] = c("2011",mean(women_2011_df$Net_Conv))
+MeanTime_df[nrow(MeanTime_df) + 1,] = c("2012",mean(women_2012_df$Net_Conv))
+MeanTime_df[nrow(MeanTime_df) + 1,] = c("Total",mean(women_combined_df$Net_Conv))
+
+as.data.table(MeanTime_df)
+
+```
+
+From the mean time table above the 2011 outlier is reaffirmed. This outlier is almost 10 minutes higher than the mean of all races. Additional data would be needed to evaluate possible causes of this outlier discrepancy. Multiple factors could be at play to cause this outlier. Some examples of possible impacts could be: racers could have truly run the race at a slower pace, weather conditions could have impacted racers, or even the total number of racers could have impacted these times. Based on the data available, 2011 had the second highest total number of racers, with 9034, however this was only an increase of approximately 200 racers from 2010. In addition, the number of racers in 2012 went up to 9733 which was a much larger increase and race times for 2012 were back around the mean. Additional analysis would need to be performed with additional data sets to truly understand what caused 2011 to be such an outlier in race time.
+
+The distrubution chart below also reaffirms that 2011 was an outlier year.
+
+```{r,echo=FALSE,message=FALSE}
+
+  # Women's race time distribution
+  # We can see times are generally the same across years, except for the outlier year in 2011 which was slightly higher
+  Year_Sel <- c('1999','2000','2001','2002','2003','2004','2005','2006','2007','2008','2009','2010','2011','2012')
+  women_combined_df %>% 
+    filter(Net_Conv > 18 & Year == Year_Sel) %>% 
+    ggplot() + 
+    geom_density(aes(x = Net_Conv,group = factor(Year), fill=factor(Year), alpha = 0.5)) + 
+    ggtitle("Women's Race Time - All Years - Distribution") + 
+    labs(fill = "Year") +
+    geom_vline(aes(xintercept=mean(Ag)), color="red", linetype="dashed", size=1)
+
+```
+
+
+# Conclusion
+
+In conclusion the data on the Cherry Blossom race from 1999 through 2012 has provided some interesting insights. These insights should help race planners in evaluating any changes that may need to occur to maintain excitement about the race. 
+
+With respect to racers age, it was shown that the mean racers age of approximately 32 years old has remained consistent over time. There was a data anomaly in 2006 where many young racers performed in the race, however that anomaly was not seen in other years. 
+
+With respect to race completion times, like age, these too have remained fairly consistent over the 1999 through 2012 time period. The year 2011 was an outlier in this data and those results were not seen again in the data set. On average racers were finishing the the race in about 99 minutes. 
+
+The data also confirm that the number of racers entering the race continues to increase year over year. 1999 had 2365 runners while 2012 had 9733 runners. This is an extremely large increase. From a business perspective it could indicate that interest in the race still exists. 
+
+All in all, both the age and time data seem pretty consistent over the 13 year span of data that was evaluated. As the number of racers continue to increase over the years these values may shift as more racers begin to enter the race. 
+
+From a race planner perspective this data can assist in planning for future races on many levels. It can assist with planning out the race course. On average the racers are completing in about 99 minutes, in a congested city such as Washington, D.C., understanding how long streets may be blocked off and impact traffic around the city. In addition, this information may go into overall route planning by providing alternative race routes that fall into the length of the race but also can be completed in the average time. Understanding the average ages of the runners could largely help the planners in a marketing sense for the race. Knowing that the racer ages skew toward the low 30s provides the race planners with information about how best to reach those racers. It may be more beneficial for the race planners to market on websites and social media sites given the average racer age than to advertise in running magazines or newspapers. 
+
+Overall, the trends look to be relatively steady with respect to runners ages and completion times. There is a consistent increase in number of runners attending the races, however ages and finish times remain consistent. This trend looks to be consistent over the 13 period analyzed with only a few outliers in each case. 
