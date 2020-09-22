@@ -20,7 +20,7 @@ This report focuses on the 1999 through 2012 years of the race. The goal is to s
 
 In order to perform the analysis the data for races from 1999 through 2012 must be acquired. The easiest way to gather this data is through web scraping of the [Cherry Blossom](http://www.cherryblossom.org/) race website. The website contains web pages listing all of the race results through the specified time period.
 
-Web scraping has many aspects that must be taken into account when performed. First and foremost, the data must be allowed to be scraped from websites. The content of a website may be a revenue generation opportunity or built out content that the website owner has spent considerable time curating. When acquiring data from websites it must first be verified that the website allows scraping of the site's data. Scraping websites without site owner's consent may result in litigation if the data is presented without attribution and may be in violation of copyright laws. In this particular case, the data from the Cherry Blossom site is being presented to the race planners Since this data is for the race planners and is from the race website there are no legal implications present in scraping the website data for this analysis. 
+Web scraping has many aspects that must be taken into account when performed. First and foremost, the data must be allowed to be scraped from websites. The content of a website may be a revenue generation opportunity or built out content that the website owner has spent considerable time curating. When acquiring data from websites it must first be verified that the website allows scraping of the site's data. Scraping websites without site owner's consent may result in litigation if the data is presented without attribution and may be in violation of copyright laws. In this particular case, the data from the Cherry Blossom site is being presented to the race planners. There are no legal concerns about scraping the Cherry Blossom site data in this context since the data is being presented back to the race planners. 
 
 A second aspect that must be taken into account when scraping websites is understanding the data availability and working through the differences that may occur overtime with individual site webpages. In the Cherry Blossom case, the race results were housed on individual webpages for each race year. However, each year's webpages has subtle differences that required changes in the acquisition method to ensure the data was captured correctly. For example, some years of the Cherry Blossom race captured only race completion time, while others included completion time and gun time. The web scraping must be adapted to take all of these possible changes into account.
 
@@ -69,7 +69,7 @@ extractResTable =
   # Retrieve data from web site, 
   # find the preformatted text,
   # and write lines or return as a character vector.
-  # returns a list of strings corrsponding to lines in the web url
+  # returns a list of strings corresponding to lines in the web url
   function(url = "http://www.cherryblossom.org/results/2009/09cucb-F.htm",
            year = 1999, sex = "female", file = NULL)
   {
@@ -383,7 +383,7 @@ women_2012_df <- data.frame(Place = substr(women_2012_t[5:9733,],1,5),
 
 The results of scraping the Cherry Blossom site for the women's results provides us the following record counts for the years in question. This information provides an initial check that the web scraping is working as expected and provides an individual record set by year for initial data cleansing.
 
-```{r, echo=FALSE}
+```{r, echo=FALSE,message=FALSE, warning=FALSE}
 as.data.table(RecordCount_df)
 
 ```
@@ -391,9 +391,9 @@ as.data.table(RecordCount_df)
 
 # Data Cleaning
 
-Now that the data has been broken down into individual record sets for each year, an initial look at the data structure for each individual record set is warranted. This will ensure that data mapped into the data sets represents the correct data types for the values that are expected to be pulled from the data. Since all individual record sets are pulled in the same format evaluating the 2000 record set will provide a quick indication that data was mapped correctly.
+Now that the data has been broken down into individual record sets for each year, an initial look at the data structure for each individual record set is warranted. This will ensure that data mapped into the individual data sets represents the correct data types for the values that are expected to be pulled from the race webpages. Since all individual record sets are pulled in the same format evaluating the 2000 record set will provide a quick indication that data was mapped correctly.
 
-```{r}
+```{r, echo=FALSE,message=FALSE, warning=FALSE}
 sapply(women_2000_df,class)
 ```
 From the above information it can be seen that every field is being read as a character field. Given that the data is being scraped from the web, this makes sense. Data conversion will be necessary to the respective data types as individual record sets are combined into a full record set. 
@@ -402,9 +402,9 @@ From the above information it can be seen that every field is being read as a ch
 The evaluation of missing data is another items that is best addressed at the individual record set level. Performing missing data checks at this level makes addressing them much easier prior to combining the data into a full record data set. The table below shows the results of missing data analysis for each of the individual record sets. 
 
 
-```{r, echo=FALSE}
+```{r, echo=FALSE,message=FALSE, warning=FALSE}
 MissingCount_df <- data.frame(matrix(ncol = 2, nrow = 0))
-x <- c("Year", "Count")
+x <- c("Race Year", "Missing Record Count")
 colnames(MissingCount_df) = x
 
 MissingCount_df[nrow(MissingCount_df) + 1,] = c("1999",sum(is.na(women_1999_df)))
@@ -593,15 +593,15 @@ women_combined_df <- bind_rows(women_1999_df
 ```
 Checking the combined record set data types, as noted below, all values are now more indicative of the respective data column. Age (Ag) is now numeric and the race time (Net_Conv) is also numeric. 
 
-```{r, echo=FALSE}
+```{r, echo=FALSE,message=FALSE, warning=FALSE}
 sapply(women_combined_df, class) 
 
 ```
 Evaluating the data for missing values produces the following results:
-```{r, echo=FALSE}
+```{r, echo=FALSE,message=FALSE, warning=FALSE}
 
 MissCount_df <- data.frame(matrix(ncol = 1, nrow = 0))
-x <- c("Count Missing")
+x <- c("Missing Record Count")
 colnames(MissCount_df) = x
 
 MissCount_df[nrow(MissCount_df) + 1,] = c(sum(is.na(women_combined_df)))
@@ -611,43 +611,43 @@ as.data.table(MissCount_df)
 
 Based on the missing value check, it can be seen that the data has remained intact throughout the transformations. One additional check to provide summary statistics of the data will be performed prior to beginning analysis. This summary statistics check provides another sanity check for data evaluation.
 
-```{r, echo=FALSE}
+```{r, echo=FALSE,message=FALSE, warning=FALSE}
 summary(women_combined_df)
 ```
-The summary statistics above reconfirm the information that was expected. The character fields should not have an statistical values. Additionally, the Age (Ag) and race time (Net_Conv) fields do show reasonable statistical values. It should be noted that the Age (Ag) field does show a minimum value of 0.00. This indicates that there may be incorrect data input into the age field for some runners or that the data was omitted. Evaluating the combined record set to pick out zero age record results in the data shown below. 
+The summary statistics above reconfirm the information that was expected. The character fields should not have any statistical values. Additionally, the Age (Ag) and race time (Net_Conv) fields do show reasonable statistical values. It should be noted that the Age (Ag) field does show a minimum value of 0.00. This indicates that there may be incorrect data input into the age field for some runners or that the data was omitted. Evaluating the combined record set to pick out zero age record results in the data shown below. 
 
-```{r, echo=FALSE}
+```{r, echo=FALSE,message=FALSE, warning=FALSE}
 women_combined_df[which(women_combined_df$Ag == min(women_combined_df$Ag)), ]
 
 ```
 
-Evaluation of the race results web page for the 2001 race does confirm that the age entered for this individual was 0. As such this should be treated as an invalid data point, with respect to age.
+Evaluation of the race results web page for the 2001 race does confirm that the age entered for this individual was 0. As such this should be treated as an invalid data point, with respect to age. On a positive note, there is only one record in this data set with a zero value for age. 
 
 # Data Analysis
 
 Now that the data has been scraped and cleaned for analysis, the process of answering the requested business questions can begin. The initial analysis will start with an analysis of racers ages over time. It will then move into the evaluation of race completion times over time. 
 
-## Age Analysis
+## Racer Age Analysis
 
-```{r, echo=FALSE}
+```{r, echo=FALSE,message=FALSE, warning=FALSE}
 ggplot(women_combined_df, aes(x=Year, y=Ag)) + 
   geom_boxplot(outlier.colour="red", outlier.shape=8,
                outlier.size=4) +
-  ggtitle("Women's Racers Ages - All Years")
+  ggtitle("Women's Racers Ages - All Years") + ylab("Age")
 ```
 From the box plot it can be seen that 2006 had a lot of younger racers compared to the other years. Additionally, in 2006 many of these younger racers were at the tail end of the race times. This could indicate an influx of non-professional runners during the race for that year. 
 
 Diving into the distribution of ages across the race years the plot below shows a bimodal distribution of ages. This distribution reaffirms the large number of younger racers seen in 2006. 
 
-```{r, echo=FALSE}
+```{r, echo=FALSE,message=FALSE, warning=FALSE}
   ggplot(women_combined_df) + 
     geom_density(aes(x = Ag), alpha = 0.7,color="green", fill="lightgreen") + 
     ggtitle("Women's Racers Age Distribution - All Years") + 
-    geom_vline(aes(xintercept=mean(Ag)), color="red", linetype="dashed", size=1)
+    geom_vline(aes(xintercept=mean(Ag)), color="red", linetype="dashed", size=1) + xlab("Age")
 ```
 
-Continuing to evaluae runners ages the data provides an opportunity to evaluate mean age by race year as shown in the table below.
-```{r,echo=FALSE}
+Continuing to evaluate runners ages the data provides an opportunity to evaluate mean age by race year as shown in the table below.
+```{r,echo=FALSE,message=FALSE, warning=FALSE}
 
 
 MeanAge_df <- data.frame(matrix(ncol = 2, nrow = 0))
@@ -672,20 +672,35 @@ MeanAge_df[nrow(MeanAge_df) + 1,] = c("Total",mean(women_combined_df$Ag))
 
 as.data.table(MeanAge_df)
 ```
-This table confirms the distribution plot and box plots above with respect to racers in 2006 skewing much younger for that year. Using the mean age of all races as 22, looking specifically at 2006 it can be seen that of the 5435 racers in 2006, 3732 of them were below the mean race age.
+This table confirms the distribution plot and box plots above with respect to racers in 2006 skewing much younger for that year. Using the mean age of all races as 32, looking specifically at 2006 it can be seen that of the 5435 racers in 2006, 3784 of them were below the mean race age.
 
-```{r, echo=FALSE}
+```{r, echo=FALSE, results='hide',message=FALSE, warning=FALSE}
 
 # get total count of racers in 2006
 
 nrow(women_2006_df)
 # get number of racers under the mean of 22
 
-nrow((women_2006_df[which(women_2006_df$Ag < 22), ]))
+nrow((women_2006_df[which(women_2006_df$Ag < 32), ]))
 ```
+Digging deeper into the 2006 data specifically, the distribution plot below shows that a large portion of the runners in 2006 were under 18 years of age. There could be many factors that account for this lower age skew.
+
+* Runners could be truly entering at a younger age
+* Runners could be providing lower ages
+* Data could have been entered incorrectly
+
+Each of these cases could take additional data and understanding of the circumstances to come to a concrete conclusion. 
+
+```{r, echo=FALSE,message=FALSE, warning=FALSE}
+  ggplot(women_2006_df) + 
+    geom_density(aes(x = women_2006_df$A), alpha = 0.7,color="green", fill="lightgreen") + 
+    ggtitle("Women's Racers Age Distribution - 2006") + 
+    geom_vline(aes(xintercept=mean(women_2006_df$A)), color="red", linetype="dashed", size=1) + xlab("Age")
+```
+
 Reevaluating the age data to account for the 2006 outlier (filtering for racers that are older than 18 years of age) the following distribution can be seen:
 
-```{r, echo=FALSE,message=FALSE}
+```{r, echo=FALSE,message=FALSE,warning=FALSE}
   # If we re-plot the age distribution and ignore all ages younger than 18 due to the 2006 outlier, we get this distribution
   # There is some evidence that racers' ages are getting younger, but take note of the two outlier years in 2007 and 2002 where
   # ages were a bit older
@@ -696,13 +711,12 @@ Reevaluating the age data to account for the 2006 outlier (filtering for racers 
     geom_density(aes(x = Ag,group = factor(Year), fill=factor(Year), alpha = 0.5)) + 
     ggtitle("Women's Racers Age Distribution - All Years - Distribution") + 
     labs(fill = "Year") +
-    geom_vline(aes(xintercept=mean(Ag)), color="red", linetype="dashed", size=1)
+    geom_vline(aes(xintercept=mean(Ag)), color="red", linetype="dashed", size=1) + xlab("Age")
 ```
-Accounting for the extremely young outliers in the distribution above it can be seen that there is still some skew towards younger ages. The outliers in this case are 2002 and 2007 where ages were actually a bit older. Leveraging the same data in the scatter plot below it can be seen that there is a stronger concentration of ages in the 2009-2012 year range compared to previous years. This could indicate that more racers are entering the race. 
+Accounting for the extremely young outliers in the distribution above it can be seen that there is still some skew towards younger ages. The outliers in this case are 2002 and 2007 where ages were actually a bit older. Leveraging the same data in the scatter plot below it can be seen that there is a stronger concentration of ages in the 2009-2012 year range compared to previous years. This could indicate that more racers are entering the race. This can be reaffirmed by looking again at the number of racers in each yearly race.
 
 
-
-```{r, echo=FALSE,message=FALSE}
+```{r, echo=FALSE,message=FALSE,warning=FALSE}
   # Scatter Plot - this plot, filtered for ages > 18, clearly shows a stronger concentration of ages in the 2009 - 2012 year range compared
   # to previous years
   women_combined_df %>% 
@@ -710,15 +724,21 @@ Accounting for the extremely young outliers in the distribution above it can be 
     ggplot(map=aes(Year,Ag))+
     geom_point()+
     geom_jitter() + 
-    ggtitle("Women's Racers Ages - All Years - Scatter Plot")
+    ggtitle("Women's Racers Ages - All Years - Scatter Plot") + ylab("Age")
 
 ```
 
-## Time Analysis
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+as.data.table(RecordCount_df)
+```
+
+Both the scatterplot and table above confirm that the number of racers has continued to increase from 1999 through 2012.
+
+## Race Time Analysis
 
 Just as with the age data there are interesting trends the emerge when evaluating race time data. A simple box plot of race times begins to show some of these points of interest. In the box plot below of Net Race times over all years it can be seen that on average the race times were consistent in all years except for 2011.
 
-```{r,echo=FALSE,message=FALSE}
+```{r,echo=FALSE,message=FALSE, warning=FALSE}
   # Box Plots - Net Race Times
   # Mean times are increasing - big outlier in 2011
   ggplot(women_combined_df, aes(x=Year, y=Net_Conv)) + 
@@ -729,7 +749,7 @@ Just as with the age data there are interesting trends the emerge when evaluatin
 
 Digging deeper into mean runner time provides the following table:
 
-```{r,echo=FALSE,message=FALSE}
+```{r,echo=FALSE,message=FALSE, warning=FALSE}
 MeanTime_df <- data.frame(matrix(ncol = 2, nrow = 0))
 x <- c("Year", "Mean Time")
 colnames(MeanTime_df) = x
@@ -756,9 +776,9 @@ as.data.table(MeanTime_df)
 
 From the mean time table above the 2011 outlier is reaffirmed. This outlier is almost 10 minutes higher than the mean of all races. Additional data would be needed to evaluate possible causes of this outlier discrepancy. Multiple factors could be at play to cause this outlier. Some examples of possible impacts could be: racers could have truly run the race at a slower pace, weather conditions could have impacted racers, or even the total number of racers could have impacted these times. Based on the data available, 2011 had the second highest total number of racers, with 9034, however this was only an increase of approximately 200 racers from 2010. In addition, the number of racers in 2012 went up to 9733 which was a much larger increase and race times for 2012 were back around the mean. Additional analysis would need to be performed with additional data sets to truly understand what caused 2011 to be such an outlier in race time.
 
-The distrubution chart below also reaffirms that 2011 was an outlier year.
+The distribution chart below also reaffirms that 2011 was an outlier year.
 
-```{r,echo=FALSE,message=FALSE}
+```{r,echo=FALSE,message=FALSE, warning=FALSE}
 
   # Women's race time distribution
   # We can see times are generally the same across years, except for the outlier year in 2011 which was slightly higher
@@ -778,7 +798,7 @@ The distrubution chart below also reaffirms that 2011 was an outlier year.
 
 In conclusion the data on the Cherry Blossom race from 1999 through 2012 has provided some interesting insights. These insights should help race planners in evaluating any changes that may need to occur to maintain excitement about the race. 
 
-With respect to racers age, it was shown that the mean racers age of approximately 22 years old has remained consistent over time. There was a data anomaly in 2006 where many young racers performed in the race, however that anomaly was not seen in other years. 
+With respect to racers age, it was shown that the mean racers age of approximately 32 years old has remained consistent over time. There was a data anomaly in 2006 where many young racers performed in the race, however that anomaly was not seen in other years. 
 
 With respect to race completion times, like age, these too have remained fairly consistent over the 1999 through 2012 time period. The year 2011 was an outlier in this data and those results were not seen again in the data set. On average racers were finishing the the race in about 99 minutes. 
 
