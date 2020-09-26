@@ -3,3 +3,260 @@ title: "MSDS 7333 Fall 2020: Case Study 3"
 author: "Jayson Barker, Brandon Croom, Shane Winestock"
 output: html_document
 ---
+
+# Business Understanding
+
+# Data Acquisition/Cleaning
+
+```{r, echo=FALSE, message=FALSE}
+
+# Load necessary package libraries
+library(data.table)
+library(tidyverse)
+#library(plyr)
+#library(tidyr)
+#library(dplyr)
+library(ggplot2)
+#install.packages("caret")
+library(caret)
+#install.packages("randomForest")
+library(randomForest)
+#install.packages("gbm")
+library(gbm)
+#install.packages("corrgram")
+library(corrgram)
+library(corrplot)
+#install.packages("mltools")
+library(mltools)
+#install.packages("ggraph")
+library(ggraph)
+library(igraph)
+library(tree)
+#install.packages("maptree")
+library(maptree)
+```
+
+```{r, echo=FALSE, message=FALSE}
+# Define Helper functions
+
+detectNA <- function(inp) {
+  sum(is.na(inp))
+}
+
+detectCor <- function(x) {
+  cor(as.numeric(emailDFrp[, x]), 
+    as.numeric(emailDFrp$isSpam), 
+    method="spearman")
+}
+
+
+#NOTE: Tree plot function from: https://shiring.github.io/machine_learning/2017/03/16/rf_plot_ggraph
+tree_func <- function(final_model, 
+                      tree_num) {
+  
+  # get tree by index
+  tree <- randomForest::getTree(final_model, 
+                                k = tree_num, 
+                                labelVar = TRUE) %>%
+    tibble::rownames_to_column() %>%
+    # make leaf split points to NA, so the 0s won't get plotted
+    mutate(`split point` = ifelse(is.na(prediction), `split point`, NA))
+  
+  # prepare data frame for graph
+  graph_frame <- data.frame(from = rep(tree$rowname, 2),
+                            to = c(tree$`left daughter`, tree$`right daughter`))
+  
+  # convert to graph and delete the last node that we don't want to plot
+  graph <- graph_from_data_frame(graph_frame) %>%
+    delete_vertices("0")
+  
+  # set node labels
+  V(graph)$node_label <- gsub("_", " ", as.character(tree$`split var`))
+  V(graph)$leaf_label <- as.character(tree$prediction)
+  V(graph)$split <- as.character(round(tree$`split point`, digits = 2))
+  
+  # plot
+  plot <- ggraph(graph, 'dendrogram') + 
+    theme_bw() +
+    geom_edge_link() +
+    geom_node_point() +
+    geom_node_text(aes(label = node_label), na.rm = TRUE, repel = TRUE) +
+    geom_node_label(aes(label = split), vjust = 2.5, na.rm = TRUE, fill = "white") +
+    geom_node_label(aes(label = leaf_label, fill = leaf_label), na.rm = TRUE, 
+					repel = TRUE, colour = "white", fontface = "bold", show.legend = FALSE) +
+    theme(panel.grid.minor = element_blank(),
+          panel.grid.major = element_blank(),
+          panel.background = element_blank(),
+          plot.background = element_rect(fill = "white"),
+          panel.border = element_blank(),
+          axis.line = element_blank(),
+          axis.text.x = element_blank(),
+          axis.text.y = element_blank(),
+          axis.ticks = element_blank(),
+          axis.title.x = element_blank(),
+          axis.title.y = element_blank(),
+          plot.title = element_text(size = 18))
+  
+  print(plot)
+}
+```
+
+```{r, echo=FALSE, message=FALSE}
+# Load data
+croom_wd = "C:/RAI/DS7333-QTW/CaseStudy3/"
+barker_wd = ""
+weinstock_wd = ""
+
+setwd(croom_wd)
+
+load("data.rda")
+
+# Verify Data is loaded
+head(emailDFrp)
+```
+
+```{r, echo=FALSE, message=FALSE}
+ # evaluate data types to ensure everything looks ok
+ str(emailDFrp)
+```
+
+```{r, echo=FALSE, message=FALSE}
+
+#Build out a quick summary of all the data frame columns
+lapply(emailDFrp, FUN=summary)
+
+```
+
+```{r, echo=FALSE, message=FALSE}
+#check for NAs and omit if found
+lapply(emailDFrp, FUN=detectNA)
+emailDFrp = na.omit(emailDFrp)
+```
+
+```{r, echo=FALSE, message=FALSE}
+#Look at the fequency distribution of spam in our data
+dfrQltyFreq <- summarise(group_by(emailDFrp, isSpam), count=n())
+
+# plot the number of spam vs non-spam message in the data
+ggplot(dfrQltyFreq, aes(x=isSpam, y=count)) +
+    geom_bar(stat="identity", aes(fill=count)) +
+    labs(title="Status Frequency Distribution") +
+    labs(x="Status") +
+    labs(y="Counts")
+```
+
+```{r, echo=FALSE, message=FALSE}
+
+# find correlations
+Corr_DF <- abs(sapply(colnames(emailDFrp), detectCor)) #absolute value
+
+summary(Corr_DF)
+```
+```{r, echo=FALSE, message=FALSE}
+
+# One Hot Encode the dataframe to run correlation plots
+OHE_emailDRrp = copy(emailDFrp)
+
+cols <- sapply(OHE_emailDRrp, is.factor)
+
+#convert all the factors to character values
+OHE_emailDRrp[,cols] <- lapply(OHE_emailDRrp[,cols], function(x) as.character(x))
+
+#convert the character value t/f to 1/0 respectively
+OHE_emailDRrp[,cols] <- lapply(OHE_emailDRrp[,cols], function(x) gsub("T", "1", x))
+OHE_emailDRrp[,cols] <- lapply(OHE_emailDRrp[,cols], function(x) gsub("F", "0", x))
+
+#convert the character 1/0 to numberis
+OHE_emailDRrp[,cols] <- lapply(OHE_emailDRrp[,cols], function(x) as.numeric(x))
+
+
+corrplot(cor(OHE_emailDRrp[c(2:10,1)]))
+corrplot(cor(OHE_emailDRrp[c(10:20,1)]))
+corrplot(cor(OHE_emailDRrp[c(20:30,1)]))
+
+```
+
+# Data Analysis
+
+```{r, echo=FALSE, message=FALSE}
+# build out training and test data. We'll use an 80/20 split to start
+set.seed(100)
+cntTrainRecs = createDataPartition(y=OHE_emailDRrp$isSpam,p=0.8,list=FALSE)
+train_df = OHE_emailDRrp[cntTrainRecs,]
+test_df = OHE_emailDRrp[-cntTrainRecs,]
+
+dim(train_df)
+dim(test_df)
+```
+
+```{r,echo=FALSE,message=FALSE,warning=FALSE}
+#Build out random forest for analysis
+set.seed(100)
+
+Mtry = sqrt(ncol(OHE_emailDRrp)-2)
+Ntrees = 500
+
+#track the processing time for grins
+startTime = proc.time()
+
+RFModel = randomForest(isSpam~.-isSpam,data=train_df,mtry=Mtry,ntree=Ntrees)
+
+endTime = proc.time()
+
+print(paste("Model Created ...",endTime[1] - startTime[1]))
+
+```
+
+```{r,echo=FALSE,message==FALSE}
+# Display the model for accuracy understanding
+RFModel
+summary(RFModel)
+```
+```{r,echo=FALSE,message==FALSE}
+# plot the overall number of trees built
+plot(RFModel)
+```
+
+```{r,echo=FALSE,message==FALSE}
+# Determine which factors have the most importance
+importance(RFModel)
+#NOTE: Plotting the top 15 variables here for readability. most trail off unver 30ish
+varImpPlot(RFModel,main="Variable Importance Plot",n.var=15)
+```
+```{r, echo=FALSE, message=FALSE}
+# get the top 10 most important features
+importanceOrder=order(-RFModel$importance)
+imp_names=rownames(RFModel$importance)[importanceOrder][1:10]
+imp_names
+imp_names = append(imp_names,"isSpam")
+```
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+test_df2 = copy(test_df[imp_names])
+train_df2 = copy(train_df[imp_names])
+
+#Build out random forest for analysis
+set.seed(100)
+
+Mtry = sqrt(ncol(train_df2)-2)
+Ntrees = 500
+
+#track the processing time for grins
+startTime = proc.time()
+
+RFModel2 = randomForest(isSpam~.-isSpam,data=train_df2,mtry=Mtry,ntree=Ntrees)
+
+endTime = proc.time()
+
+print(paste("Model Created ...",endTime[1] - startTime[1]))
+
+tree_func(RFModel2,1)
+```
+
+```{r,echo=FALSE,message==FALSE}
+#NOTE: ERROR HERE. NEED TO FIX
+# Build out a confusion matrix for analysis
+predictVal <- predict(RFModel2, newdata=test_df2)
+CM_Result  <- confusionMatrix(predictVal,test_df2$isSpam)
+CM_Result
+```
+# Conclusion
