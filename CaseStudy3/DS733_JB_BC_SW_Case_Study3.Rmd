@@ -1,21 +1,31 @@
 ---
-title: "MSDS 7333 Fall 2020: Case Study 3"
+title: 'MSDS 7333 Fall 2020: Case Study 3'
 author: "Jayson Barker, Brandon Croom, Shane Winestock"
-output: html_document
+output:
+  pdf_document: default
+  html_document: default
 ---
 
 # Business Understanding
+Spam email is unsolicited and unwanted junk email sent out in bulk to an indiscriminate recipient list. Spam is typically send out for commercial purposes, but may also be leveraged for nefarious purposes. These emails are typically send out in bulk by botnets, networks of infected computers. According to multiple internet sites spam email accounts for 14.5 billion email message globally per day. This is approximately 45% of all emails. This magnitude of spam emails mixes in with regular emails that users need to address for business or personal purposes, thus making email more difficult to use.
+
+To overcome the magnitude of spam emails and the interference with regular emails, being able to classify an email as spam or not-spam (aka ham) becomes a necessity. This problem has been solved in multiple ways by various technology vendors such as Microsoft and Google. For the purposes of this report, the project team will setup to classify emails as spam or not-spam through tree based approaches. 
+
+A tree provides a visual representation of a course of action or statistical probability. When visualized, the tree forms the outline of its physical namesake. Trees consist of branches and leaves (or decision nodes and terminal nodes). Each branch contains a decision point which represents a test on a feature. Each leaf node represents the decision made after computing all features. Leaves have no further decisions and are the furthest points on the tree. The path through the tree from the root node (or first node) to an individual leaf node represents a classification path. Building out this classification path will be what the project team will use to determine if an email is spam or not-spam.
 
 # Data Acquisition/Cleaning
+In order to determine if an email is spam or not-spam a corpus of emails needs to be collected and attributes on that corpus defined. For this report, the corpus of emails has been provided. At a high level the corpus contains 9,348 records with 30 different features. The data summary table below provides a good overview of the data set. The following summary of insights is apparent in the table:
 
+* There are 17 categorical variables in the data set
+* There are 13 continuous variables in the data set
+* At least four features (subExcCt, subQuestCt, numRec, and subBlanks) have missing values that need to be addressed
+
+With respect to the missing values, for the purposes of this analysis the rows with missing values will be dropped. This will bring our working record count to 9045.
 ```{r, echo=FALSE, message=FALSE}
 
 # Load necessary package libraries
 library(data.table)
 library(tidyverse)
-#library(plyr)
-#library(tidyr)
-#library(dplyr)
 library(ggplot2)
 #install.packages("caret")
 library(caret)
@@ -34,6 +44,8 @@ library(igraph)
 library(tree)
 #install.packages("maptree")
 library(maptree)
+#install.packages("skimr")
+library(skimr)
 ```
 
 ```{r, echo=FALSE, message=FALSE}
@@ -110,42 +122,34 @@ weinstock_wd = ""
 setwd(croom_wd)
 
 load("data.rda")
-
-# Verify Data is loaded
-head(emailDFrp)
 ```
 
 ```{r, echo=FALSE, message=FALSE}
- # evaluate data types to ensure everything looks ok
- str(emailDFrp)
+ # summarize the data to look at counts, datatypes, and other information.
+ skim(emailDFrp)
 ```
 
-```{r, echo=FALSE, message=FALSE}
-
-#Build out a quick summary of all the data frame columns
-lapply(emailDFrp, FUN=summary)
-
-```
-
-```{r, echo=FALSE, message=FALSE}
-#check for NAs and omit if found
-lapply(emailDFrp, FUN=detectNA)
+```{r, echo=FALSE, message=FALSE, results='hide'}
+#omit and NAs if found in the data set
 emailDFrp = na.omit(emailDFrp)
+skim(emailDFrp)
 ```
+Continuing in the exploratory data analysis, the data set has a feature called isSpam. This feature is the original classification value for each email to determine whether it is spam or not. For the purposes of building out a classification model an evaluation needs to occur on this feature to see whether the data is balanced or unbalanced. Balanced data indicates that the feature values have approximately a 50/50 split in them. Unbalanced data indicates that the feature values skew in one direction or another. As Figure 1 below displays, the isSpam field is unbalanced in that there are more records in the data set classified with isSpam=F which indicates a not-spam email versus a spam email where isSpam=T. From a numeric perspective, 6674 of the 9045 records are classified as not spam, while 2371 are classified as spam.
 
 ```{r, echo=FALSE, message=FALSE}
-#Look at the fequency distribution of spam in our data
+#Look at the frequency distribution of spam in our data
 dfrQltyFreq <- summarise(group_by(emailDFrp, isSpam), count=n())
 
 # plot the number of spam vs non-spam message in the data
 ggplot(dfrQltyFreq, aes(x=isSpam, y=count)) +
     geom_bar(stat="identity", aes(fill=count)) +
-    labs(title="Status Frequency Distribution") +
-    labs(x="Status") +
+    labs(title="Figure 1: isSpam Feature Frequency Distribution") +
+    labs(x="isSpam") +
     labs(y="Counts")
 ```
+Further exploring the data, the investigation of correlations between features needs to occur. Correlations are relationships between two or more features. Understanding which features in the dataset are correlated allow for data set simplification. If fields are highly correlated then similar enough information may be present that both features do not need to be carried forward into analysis. The correlation plots in Figures 2 - 4 show the correlations between all 30 features in the data set.
 
-```{r, echo=FALSE, message=FALSE}
+```{r, echo=FALSE, message=FALSE, results='hide'}
 
 # find correlations
 Corr_DF <- abs(sapply(colnames(emailDFrp), detectCor)) #absolute value
@@ -170,13 +174,22 @@ OHE_emailDRrp[,cols] <- lapply(OHE_emailDRrp[,cols], function(x) gsub("F", "0", 
 OHE_emailDRrp[,cols] <- lapply(OHE_emailDRrp[,cols], function(x) as.numeric(x))
 
 
-corrplot(cor(OHE_emailDRrp[c(2:10,1)]))
-corrplot(cor(OHE_emailDRrp[c(10:20,1)]))
-corrplot(cor(OHE_emailDRrp[c(20:30,1)]))
+corrplot(cor(OHE_emailDRrp[c(2:10,1)]), title="Figure 2: Correlation Plot (1 of 3)")
+corrplot(cor(OHE_emailDRrp[c(10:20,1)]), title="Figure 3: Correlation Plot (2 of 3)")
+corrplot(cor(OHE_emailDRrp[c(20:30,1)]), title="Figure 4: Correlation Plot (3 of 3)")
 
 ```
+From the correlation plot thre are some features that show high correlation. In summary, highly correlated features are
+
+* isInReplyTo and isRE
+* numLines and bodyCharCt
+* numDlr and subQuestCt
+
+It should also be noted at this point that in order to achieve accurate correlations, the categorical factors were one hot encoded. One hot encoding simply changes categorical variables to numeric values for easier analysis. Specifically relating to this data set the categorical variables are primarily the values T and F representing True and False. The T values were converted to the numeric value 1 and F values were converted to the numeric value 0. This is a typical approach for handling True/False values. 
 
 # Data Analysis
+
+Moving into the data analysis phase where classification of an email as spam or not-spam can begin to occur, the first step that needs to occur is building out training and test datasets. Breaking the data out into a training and test dataset allows for model building, using the training data set, and then model evaluation can occur on the test dataset. Building out two data sets in this way assists in managing model overfitting.
 
 ```{r, echo=FALSE, message=FALSE}
 # build out training and test data. We'll use an 80/20 split to start
@@ -207,17 +220,18 @@ print(paste("Model Created ...",endTime[1] - startTime[1]))
 
 ```
 
-```{r,echo=FALSE,message==FALSE}
+```{r,echo=FALSE,message=FALSE}
 # Display the model for accuracy understanding
 RFModel
 summary(RFModel)
 ```
-```{r,echo=FALSE,message==FALSE}
+
+```{r,echo=FALSE,message=FALSE}
 # plot the overall number of trees built
 plot(RFModel)
 ```
 
-```{r,echo=FALSE,message==FALSE}
+```{r,echo=FALSE,message=FALSE}
 # Determine which factors have the most importance
 importance(RFModel)
 #NOTE: Plotting the top 15 variables here for readability. most trail off unver 30ish
@@ -255,8 +269,8 @@ tree_func(RFModel2,1)
 ```{r,echo=FALSE,message==FALSE}
 #NOTE: ERROR HERE. NEED TO FIX
 # Build out a confusion matrix for analysis
-predictVal <- predict(RFModel2, newdata=test_df2)
-CM_Result  <- confusionMatrix(predictVal,test_df2$isSpam)
-CM_Result
+# predictVal <- predict(RFModel2, newdata=test_df2)
+# CM_Result  <- confusionMatrix(predictVal,test_df2$isSpam)
+# CM_Result
 ```
 # Conclusion
