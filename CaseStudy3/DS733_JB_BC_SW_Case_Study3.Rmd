@@ -2,8 +2,8 @@
 title: 'MSDS 7333 Fall 2020: Case Study 3'
 author: "Jayson Barker, Brandon Croom, Shane Winestock"
 output:
-  pdf_document: default
   html_document: default
+  pdf_document: default
 ---
 
 # Business Understanding
@@ -26,9 +26,11 @@ With respect to the missing values, for the purposes of this analysis the rows w
 # Load necessary package libraries
 library(data.table)
 library(tidyverse)
-library(ggplot2)
 #install.packages("caret")
 library(caret)
+library(rpart)
+#install.packages("rpart.plot")
+library(rpart.plot)
 #install.packages("randomForest")
 library(randomForest)
 #install.packages("gbm")
@@ -36,16 +38,11 @@ library(gbm)
 #install.packages("corrgram")
 library(corrgram)
 library(corrplot)
-#install.packages("mltools")
-library(mltools)
-#install.packages("ggraph")
-library(ggraph)
-library(igraph)
-library(tree)
-#install.packages("maptree")
-library(maptree)
 #install.packages("skimr")
 library(skimr)
+library(rattle)
+library(RColorBrewer)
+library(ROCR)
 ```
 
 ```{r, echo=FALSE, message=FALSE}
@@ -61,56 +58,6 @@ detectCor <- function(x) {
     method="spearman")
 }
 
-
-#NOTE: Tree plot function from: https://shiring.github.io/machine_learning/2017/03/16/rf_plot_ggraph
-tree_func <- function(final_model, 
-                      tree_num) {
-  
-  # get tree by index
-  tree <- randomForest::getTree(final_model, 
-                                k = tree_num, 
-                                labelVar = TRUE) %>%
-    tibble::rownames_to_column() %>%
-    # make leaf split points to NA, so the 0s won't get plotted
-    mutate(`split point` = ifelse(is.na(prediction), `split point`, NA))
-  
-  # prepare data frame for graph
-  graph_frame <- data.frame(from = rep(tree$rowname, 2),
-                            to = c(tree$`left daughter`, tree$`right daughter`))
-  
-  # convert to graph and delete the last node that we don't want to plot
-  graph <- graph_from_data_frame(graph_frame) %>%
-    delete_vertices("0")
-  
-  # set node labels
-  V(graph)$node_label <- gsub("_", " ", as.character(tree$`split var`))
-  V(graph)$leaf_label <- as.character(tree$prediction)
-  V(graph)$split <- as.character(round(tree$`split point`, digits = 2))
-  
-  # plot
-  plot <- ggraph(graph, 'dendrogram') + 
-    theme_bw() +
-    geom_edge_link() +
-    geom_node_point() +
-    geom_node_text(aes(label = node_label), na.rm = TRUE, repel = TRUE) +
-    geom_node_label(aes(label = split), vjust = 2.5, na.rm = TRUE, fill = "white") +
-    geom_node_label(aes(label = leaf_label, fill = leaf_label), na.rm = TRUE, 
-					repel = TRUE, colour = "white", fontface = "bold", show.legend = FALSE) +
-    theme(panel.grid.minor = element_blank(),
-          panel.grid.major = element_blank(),
-          panel.background = element_blank(),
-          plot.background = element_rect(fill = "white"),
-          panel.border = element_blank(),
-          axis.line = element_blank(),
-          axis.text.x = element_blank(),
-          axis.text.y = element_blank(),
-          axis.ticks = element_blank(),
-          axis.title.x = element_blank(),
-          axis.title.y = element_blank(),
-          plot.title = element_text(size = 18))
-  
-  print(plot)
-}
 ```
 
 ```{r, echo=FALSE, message=FALSE}
@@ -147,7 +94,7 @@ ggplot(dfrQltyFreq, aes(x=isSpam, y=count)) +
     labs(x="isSpam") +
     labs(y="Counts")
 ```
-Further exploring the data, the investigation of correlations between features needs to occur. Correlations are relationships between two or more features. Understanding which features in the dataset are correlated allow for data set simplification. If fields are highly correlated then similar enough information may be present that both features do not need to be carried forward into analysis. The correlation plots in Figures 2 - 4 show the correlations between all 30 features in the data set.
+Further exploring the data, the investigation of correlations between features needs to occur. Correlations are relationships between two or more features. Understanding which features in the dataset are correlated allow for data set simplification. If fields are highly correlated then similar enough information may be present that both features do not need to be carried forward into analysis. The correlation plots below show the correlations between all 30 features in the data set.
 
 ```{r, echo=FALSE, message=FALSE, results='hide'}
 
@@ -174,9 +121,9 @@ OHE_emailDRrp[,cols] <- lapply(OHE_emailDRrp[,cols], function(x) gsub("F", "0", 
 OHE_emailDRrp[,cols] <- lapply(OHE_emailDRrp[,cols], function(x) as.numeric(x))
 
 
-corrplot(cor(OHE_emailDRrp[c(2:10,1)]), title="Figure 2: Correlation Plot (1 of 3)")
-corrplot(cor(OHE_emailDRrp[c(10:20,1)]), title="Figure 3: Correlation Plot (2 of 3)")
-corrplot(cor(OHE_emailDRrp[c(20:30,1)]), title="Figure 4: Correlation Plot (3 of 3)")
+corrplot(cor(OHE_emailDRrp[c(2:10,1)]))
+corrplot(cor(OHE_emailDRrp[c(10:20,1)]))
+corrplot(cor(OHE_emailDRrp[c(20:30,1)]))
 
 ```
 From the correlation plot thre are some features that show high correlation. In summary, highly correlated features are
@@ -194,83 +141,121 @@ Moving into the data analysis phase where classification of an email as spam or 
 ```{r, echo=FALSE, message=FALSE}
 # build out training and test data. We'll use an 80/20 split to start
 set.seed(100)
-cntTrainRecs = createDataPartition(y=OHE_emailDRrp$isSpam,p=0.8,list=FALSE)
-train_df = OHE_emailDRrp[cntTrainRecs,]
-test_df = OHE_emailDRrp[-cntTrainRecs,]
+cntTrainRecs = createDataPartition(y=emailDFrp$isSpam,p=0.8,list=FALSE)
+train_df = emailDFrp[cntTrainRecs,]
+test_df = emailDFrp[-cntTrainRecs,]
 
 dim(train_df)
 dim(test_df)
 ```
+## Basic Tree Model
+
+Starting off the classification of email message the first step will be to begin with a basic tree classification model. This will allow for a quick understanding of classification and provide a baseline for further comparison.
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+model = rpart(formula=isSpam~., data=train_df,method="class")
+fancyRpartPlot(model,caption="Initial Tree")
+```
+As shown above the tree is relatively large but does provide an idea about how an email message may be classified as spam or not-spam. Using this base tree the overall accuracy of the model can be evaluated. Again this will help determine a baseline for analysis as future trees are developed. 
+
+In evaluating this tree, the first node starts with the perCaps feature. If perCaps is less than 1.3 the values move to the left of the tree. If they are greater they move to the right of the tree. Following the right side of the tree, the next test is the numLines feature. If the numLines is less than 1.2 the data moves to the left node and those values greater move to the right. Continuing right from numLines, the isInReplyTo feature is tested. If this feature is true the email is classified as spam. If it is false then the email is classified as not-spam. Following a simlar process as outlined above can be done for all nodes in the tree and will provide an indication on how the new emails may be classified.
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+predTest = predict(object=model, newdata=test_df, type="class")
+confusionMatrix(data=predTest, reference=test_df$isSpam)
+```
+From the confusion matrix above the overall accuracy of the first tree configuration is approximately 91%. Of the 1809 records in the test data set, 1271 were accurately classified as not-spam and 376 were accurately classified as spam. 
+
+To help with any possible over fitting the tree can be pruned. Pruning trees attempts to get to a more optimal tree by removing nodes in the tree and stopping at what the modeler deems is an acceptable stopping criteria. To determine what that stopping criteria could be, investigation of the error in the original tree is helpful. The plot below shows the cross validation error for each split that can be used to prune the tree. From the plot the cp equal to approximately 0.014 would be a good spot to prune the tree.
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+ plotcp(model)
+```
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+pruneModel = prune(model, cp=model$cptable[which.min(model$cptable[,"xerror"]),"CP"])
+fancyRpartPlot(pruneModel,caption="Pruned Tree")
+```
+
+The pruned tree looks very similar to the initial tree. This is also confirmed by the confusion matrix results shown below. No change is seen between the initial tree and the pruned tree. The overall accuracy of the pruned tree configuration is approximately 91%. Of the 1809 records in the test data set, 1271 were accurately classified as not-spam and 376 were accurately classified as spam. 
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+predTest = predict(object=pruneModel, newdata=test_df, type="class")
+confusionMatrix(data=predTest, reference=test_df$isSpam)
+```
+The lack of change between the original tree and pruned tree could be due to the imbalanced classes as related to the isSpam feature. As noted previously, there are more non-spam emails than spam emails in the data set. This could be impact the overall model accuracy. In order to overcome this possible over fitting evaluating the data leveraging a cross fold validation method may be called for. The cross fold validation method will also assist in dealing with the class inequality in the spam and not-spam values. 
+
+In cross fold validation, the dataset is broken up into a number of groups. Each of these groups is called a fold, denoted by the value 'k'. Each fold is then used as a testing and training data set. For purposes of this exercise k will be equal to 5 and this will be repeated 5 times. 
+
+```{r,echo=FALSE,message=FALSE}
+set.seed(100)
+cv5 = createMultiFolds(train_df$isSpam,k=5,times=5)
+control = trainControl(method="repeatedcv", number=5, repeats=5, index=cv5)
+
+modelCV = train(x=train_df[,-1],y=train_df[,1], method="rpart", tuneLength=30,trControl=control)
+
+fancyRpartPlot(modelCV$finalModel, caption="CV Tree - Initial")
+```
+Using this new tree development approach resulted in a much larger tree than the first tree build. Evaluating the confusion matrix, shown below, of this new approach will provide guidance on whether the predictions are getting better or worse.
+
+```{r,echo=FALSE,message=FALSE}
+predTest = predict(object=modelCV$finalModel, newdata=test_df, type="class")
+confusionMatrix(data=predTest, reference=test_df$isSpam)
+```
+
+The confusion matrix for the cross fold validation approach resulted in a higher accuracy of approximately 93%. Of the 1809 records in the test data set, 1296 were accurately classified as not-spam and 401 were accurately classified as spam. Taking this approach has resulted in better accuracy, however there are still other methods that will provide better results with respect to other metrics that will provide more confidence in classifying emails as spam or not-spam.
+
+## Random Forest
+
+Another approach that can be leveraged for classification is Random Forest. Using Random Forest multiple trees are built that are compared together to evaluate which tree is the best. Additionally, with Random Forest the most important variables that impact the tree creation can be evaluated. For the analysis of Random Forest 500 trees will be generated and the default for classification of using the square root of the number of features will be used when evaluating the number of features used in the construction of each tree. The model summary is presented below.
 
 ```{r,echo=FALSE,message=FALSE,warning=FALSE}
 #Build out random forest for analysis
 set.seed(100)
 
-Mtry = sqrt(ncol(OHE_emailDRrp)-2)
+#Mtry = sqrt(ncol(emailDFrp)-2)
 Ntrees = 500
 
 #track the processing time for grins
 startTime = proc.time()
 
-RFModel = randomForest(isSpam~.-isSpam,data=train_df,mtry=Mtry,ntree=Ntrees)
+RFModel = randomForest(isSpam~.-isSpam,data=train_df,ntree=Ntrees, importance=TRUE)
 
 endTime = proc.time()
-
-print(paste("Model Created ...",endTime[1] - startTime[1]))
 
 ```
 
 ```{r,echo=FALSE,message=FALSE}
 # Display the model for accuracy understanding
 RFModel
-summary(RFModel)
 ```
 
-```{r,echo=FALSE,message=FALSE}
-# plot the overall number of trees built
-plot(RFModel)
-```
+From the model summary on the training data it can be seen that 500 trees were build with 5 variables attempted at each split. The random forest was able to classify 5281 of the non-spam emails correctly, and 1791 of the spam emails correctly. 
+
+Continuing to dig into the random forest models, the important variables can be determined. Variable importance is presented two different ways in the plots below. The first plot represents the top 15 features in descending importance based on the mean decrease accuracy metric. The mean decrease accuracy metric describes the impact each feature has on the model if it is removed from the model. Similarly, the second plot represents the top 15 features in descending importance based on the mean decrease gini. The mean decrease gini evaluates the model based on how each feature impacts the gini index that is calculated. 
+
+In looking across both feature importance plots a few key observations are present:
+
+* The perCaps feature is the most important
+* Both plots contain a lot of similarities in important features
 
 ```{r,echo=FALSE,message=FALSE}
 # Determine which factors have the most importance
-importance(RFModel)
-#NOTE: Plotting the top 15 variables here for readability. most trail off unver 30ish
+#importance(RFModel)
+#NOTE: Plotting the top 15 variables here for readability. most trail off under 30ish
 varImpPlot(RFModel,main="Variable Importance Plot",n.var=15)
 ```
-```{r, echo=FALSE, message=FALSE}
-# get the top 10 most important features
-importanceOrder=order(-RFModel$importance)
-imp_names=rownames(RFModel$importance)[importanceOrder][1:10]
-imp_names
-imp_names = append(imp_names,"isSpam")
-```
-```{r, echo=FALSE, message=FALSE, warning=FALSE}
-test_df2 = copy(test_df[imp_names])
-train_df2 = copy(train_df[imp_names])
 
-#Build out random forest for analysis
-set.seed(100)
-
-Mtry = sqrt(ncol(train_df2)-2)
-Ntrees = 500
-
-#track the processing time for grins
-startTime = proc.time()
-
-RFModel2 = randomForest(isSpam~.-isSpam,data=train_df2,mtry=Mtry,ntree=Ntrees)
-
-endTime = proc.time()
-
-print(paste("Model Created ...",endTime[1] - startTime[1]))
-
-tree_func(RFModel2,1)
-```
+Now that there is an understanding of how accurate the Random Forest model is on the training data set and what features are important to the model, the random forest model can now be run on the test data set to determine how accurate the model is. The confusion matrix below indicates the results. 
 
 ```{r,echo=FALSE,message==FALSE}
 #NOTE: ERROR HERE. NEED TO FIX
 # Build out a confusion matrix for analysis
-# predictVal <- predict(RFModel2, newdata=test_df2)
-# CM_Result  <- confusionMatrix(predictVal,test_df2$isSpam)
-# CM_Result
+predictVal <- predict(RFModel, newdata=test_df)
+CM_Result  <- confusionMatrix(predictVal,test_df$isSpam)
+CM_Result
 ```
+
+Utilizing random forest the model accuracy has increased to 97%. The model successfully classified 1321 non-spam emails as spam and 443 spam emails as spam. Indications seems to indicate that this model is better than the initial tree based models that were built. To a degree this is expected since a random forest classifier is building multiple trees versus the single trees in the initial outset. 
+
 # Conclusion
