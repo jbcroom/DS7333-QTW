@@ -7,7 +7,7 @@ output:
 ---
 
 # Business Understanding
-Spam email is unsolicited and unwanted junk email sent out in bulk to an indiscriminate recipient list. Spam is typically sent out for commercial purposes, but may also be leveraged for nefarious purposes such as phishing attempts and scams. These emails are typically sent out in bulk by botnets which are networks of infected computers. According to multiple internet sites spam email accounts for 14.5 billion email message globally per day. This is approximately 45% of all emails. This magnitude of spam emails mixes in with regular emails that users need to address for business or personal purposes, thus making email more difficult and even risky for unaware users to use.
+Spam email is unsolicited and unwanted junk email sent out in bulk to an indiscriminate recipient list. Spam is typically sent out for commercial purposes, but may also be leveraged for nefarious purposes such as phishing attempts and scams. These emails are typically sent out in bulk by botnets which are networks of infected computers. According to multiple internet sites, spam email accounts for 14.5 billion email message globally per day. This is approximately 45% of all emails. This magnitude of spam emails mixes in with regular emails that users need to address for business or personal purposes, thus making email more difficult and even risky for unaware users to use.
 
 To overcome the magnitude of spam emails and the interference with regular emails, being able to classify an email as spam or not-spam (aka ham) becomes a necessity. This problem has been solved in multiple ways by various technology vendors such as Microsoft and Google. For the purposes of this report, the project team will setup to classify emails as spam or not-spam through decision tree based approaches, using the data which includes indicators denoting spam messages. 
 
@@ -45,7 +45,6 @@ library(rattle)
 library(RColorBrewer)
 #install.packages("ROCR")
 library(ROCR)
-library(ranger)
 #install.packages("broom")
 library(broom)
 #install.packages("e1071")
@@ -73,7 +72,7 @@ croom_wd = "C:/RAI/DS7333-QTW/CaseStudy3/"
 barker_wd = "F:/SMU/DS7333/Repo/DS7333-QTW/CaseStudy3"
 weinstock_wd = ""
 
-setwd(croom_wd)
+setwd(barker_wd)
 
 load("data.rda")
 ```
@@ -102,7 +101,7 @@ ggplot(dfrQltyFreq, aes(x=isSpam, y=count)) +
     labs(y="Counts")
 ```
 
-As we continue to explore the data, there are certain combinations of fields, along with isSpam, that only return a single value of isSpam. Two charts below, figure 1b, and figure 1c, demonstrate the singular value if isSpam under certain value conditions for that attribute. We think this might be useful in tree creation especially with decision splits. Additionally, the field, isPGPSigned when true, is always not spam - which makes sense as PGPSigned is an authentication protocol used to verify the sender of the email. This field may also play prominentely in tree creation and pruning.
+As we continue to explore the data, there are certain combinations of fields, along with isSpam, that only return a single value of isSpam. Three charts below, figure 1b, and figure 1c, demonstrate the singular value if isSpam under certain value conditions for that attribute. We think this might be useful in tree creation especially with decision splits. Additionally, the field, isPGPSigned when true, is always not spam - which makes sense as PGPSigned is an authentication protocol used to verify the sender of the email. This field may also play prominentely in tree creation and pruning.
 
 ```{r}
 emailDFrp %>% 
@@ -302,14 +301,14 @@ Utilizing random forest the model accuracy has increased to 97%. The model succe
 
 ## Grid Search 
 
-Another approach that could be used to build a tree is the grid search method to aid us with hyperparameter tuning. In the code below, we specify a range of hyperparamter settings and then iterate through them through 500 trees to see which displays the best model. Additionally, we are using Ranger, which is an improved and less intensive grid search implementation to build these trees. Hyperparameter tuning is useful because it helps us quickly identify the likely best parameters to use in construction of our decision tree.
+Another approach that could be used to build a tree is the grid search method to aid us with hyperparameter tuning. In the code below, we specify a range of hyperparamter settings (in this case minsplit and maxdepth) and then iterate through them to see which displays the best model. Hyperparameter tuning is useful because it helps us quickly identify the likely best parameters to use in construction of our decision tree. In future iterations to speed up analysis, other grid search methods can be used. We tried 'Ranger' which significantly sped up processing time, but did not improve the results - so it was not included in our analysis.
 
 ```{r, echo=FALSE, message=FALSE}
 
 # Defines our parameters that will be used
 gs <- list(minsplit = c(2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30),
            maxdepth = c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13)) %>% 
-  cross_df() # Convert to data frame grid
+  cross_df() # Convert to data frame
 
 # Our tree function
 mod <- function(...) {
@@ -344,7 +343,7 @@ gs
 ```
 
 
-As you can see from the below, this tree doesn't look all that different from our initial trees. The marked difference however is the approach we used to define the optimal parameters using grid search to define the model. Given the accuracy score above, and the visualized model below, we can conclude that while the grid search method performs better than our initial model, the random forest model with an accuracy of 0.97 performs much better than this model and the initial model. 
+As you can see from the below, this tree doesn't look all that different from our initial trees. The marked difference however is the approach we used to define the optimal parameters using grid search to define the model. Given the accuracy score above (0.92), and the visualized model below, we can conclude that while the grid search method performs better than our initial model (0.91), the random forest model with an accuracy of 0.97 performs much better than this model and the initial model. 
 
 ```{r,echo=FALSE,message=FALSE}
 gs_model = rpart(formula=isSpam~., data=train_df,method="class", minsplit = 2, maxdepth=13)
@@ -354,7 +353,7 @@ fancyRpartPlot(gs_model,caption="Grid Search Tree")
 
 # Conclusion
 
-In conclusion this report has leveraged multiple options to determine if an email is spam or not-spam. Initially we started with a basic classification tree and evaluated the dataset to see how it would perform. That initial tree was then pruned in an attempt to obtain a better result. In this particular instance there was no difference seen between the pruned and non-pruned trees. We then attempted to leverage random forest as a way to classify the emails. Random forest allowed for building multiple trees at once to obtain a result. The final approach we leveraged was grid search. Through grid search we attempted to use hyperparameter tuning to classify the email results.
+In conclusion this report has leveraged multiple tree-based classification models to determine if an email is spam or not-spam. Initially we started with a basic classification tree and evaluated the dataset to see how it would perform. That initial tree was then pruned in an attempt to obtain a better result. In this particular instance there was no difference seen between the pruned and non-pruned trees. We then attempted to leverage random forest as a way to classify the emails. Random forest allowed for building multiple trees at once to obtain a result. The final approach we leveraged was grid search. Through grid search we attempted to use hyperparameter tuning to classify the email results and optimized our parameter selection.
 
 Our results indicate that the random forest model performed better than all other tree models attempted; with an accuracy score of 0.97, the random forest model is a much better choice for identifying spam records in this data set compared to the other tree models attempted. One potential improvement on the random forest model would be to use grid searching to identify better performing parameters to see if the accuracy score would increase. A more balanced data set would also be useful to validate whether our models continue to be accurate.
 
