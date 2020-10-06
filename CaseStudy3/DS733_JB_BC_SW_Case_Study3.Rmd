@@ -7,11 +7,11 @@ output:
 ---
 
 # Business Understanding
-Spam email is unsolicited and unwanted junk email sent out in bulk to an indiscriminate recipient list. Spam is typically sent out for commercial purposes, but may also be leveraged for nefarious purposes such as phishing attempts and scams. These emails are typically sent out in bulk by botnets which are networks of infected computers. According to multiple internet sites, spam email accounts for 14.5 billion email message globally per day. This is approximately 45% of all emails. This magnitude of spam emails mixes in with regular emails that users need to address for business or personal purposes, thus making email more difficult and even risky for unaware users to use.
+Spam emais are unsolicited and unwanted junk email generally sent out in bulk to an indiscriminate recipient list. Spam is typically sent out for commercial purposes, but may also be leveraged for nefarious purposes such as scams and phishing attempts. These emails are typically sent out in bulk through botnets which are networks of infected computers. According to multiple internet sites, spam email accounts for 14.5 billion email message globally per day. This makes up approximately 45% of all emails. With this massively increased quantity of spam emails, it's common that spam can mix with regular emails which users need to address for business or personal purposes, thus making managing one's email inbox more difficult and likely riskier for unaware users to use.
 
-To overcome the magnitude of spam emails and the interference with regular emails, being able to classify an email as spam or not-spam (aka ham) becomes a necessity. This problem has been solved in multiple ways by various technology vendors such as Microsoft and Google. For the purposes of this report, the project team will setup to classify emails as spam or not-spam through decision tree based approaches, using the data which includes indicators denoting spam messages. 
+To overcome the magnitude of spam emails and the interference of spam with regular emails, being able to classify an email as spam or not-spam (aka ham) becomes a necessity. This problem has been solved in multiple ways by various technology vendors such as Microsoft and Google. For the purposes of this report, the project team will setup a process to classify emails as spam or not-spam through decision tree based approaches, using the data which includes indicators denoting spam messages. 
 
-A tree provides a visual representation of a course of action or statistical probability. When visualized, the tree forms the outline of its physical namesake. Trees consist of branches and leaves (or decision nodes and terminal nodes). Each branch contains a decision point which represents a test on a feature. Each leaf node represents the decision made after computing all features. Leaves have no further decisions and are the furthest points on the tree. The path through the tree from the root node (or first node) to an individual leaf node represents a classification path. Building out this classification path will be what the project team will use to determine if an email is spam or not-spam.
+A tree provides a visual representation of a series of decisions or a course of action based on statistical probability. When visualized, the tree forms the outline of its physical namesake. Trees consist of branches and leaves (or decision nodes and terminal nodes). Each branch contains a decision point which represents a test on a feature. Each leaf node represents the decision made after computing all features. Leaves have no further decisions and are the furthest or end points on the tree. The path through the tree from the root node (or first node) to an individual leaf node represents a classification path. Building out this classification path will be what the project team will use to determine if an email is spam or not-spam.
 
 # Data Acquisition/Cleaning
 In order to determine if an email is spam or not-spam a corpus of emails needs to be collected and attributes on that corpus defined. From this, a model can be constructed that can be later applied to additional email data to predict if it is a spam message or not. For this report, the corpus of emails has been provided. At a high level the corpus contains 9,348 records with 30 different features. The data summary table below provides a good overview of the data set. The following summary of insights is apparent in the table:
@@ -101,7 +101,7 @@ ggplot(dfrQltyFreq, aes(x=isSpam, y=count)) +
     labs(y="Counts")
 ```
 
-As we continue to explore the data, there are certain combinations of fields, along with isSpam, that only return a single value of isSpam. Three charts below, figure 1b, and figure 1c, demonstrate the singular value if isSpam under certain value conditions for that attribute. We think this might be useful in tree creation especially with decision splits. Additionally, the field, isPGPSigned when true, is always not spam - which makes sense as PGPSigned is an authentication protocol used to verify the sender of the email. This field may also play prominentely in tree creation and pruning.
+As we continue to explore the data, there are certain combinations of fields, along with isSpam, that only return a single value of isSpam. Three charts below, figure 1b, and figure 1c, demonstrate the singular value if isSpam under certain value conditions for that attribute. We think this might be useful in tree creation especially with decision splits. Additionally, the field, isPGPSigned when true, is empirically not spam - which makes sense as PGPSigned is an authentication protocol used to verify the sender of the email. This field may also play prominently in tree creation and pruning.
 
 ```{r}
 emailDFrp %>% 
@@ -131,7 +131,7 @@ emailDFrp %>%
 ```
 
 
-Further exploring the data, the investigation of correlations between features needs to occur. Correlations are relationships between two or more features. Understanding which features in the dataset are correlated allow for data set simplification. If fields are highly correlated then similar enough information may be present that both features do not need to be carried forward into analysis. The correlation plots below show the correlations between all 30 features in the data set.
+Further exploring the data, the investigation of correlations between features needs to occur. Correlations are relationships between two or more features. Understanding which features in the dataset are correlated allow for dataset simplification. If fields are highly correlated, then similar information may be present that both features do not need to be carried forward into analysis. The correlation plots below show the correlations between all 30 features in the data set.
 
 ```{r, echo=FALSE, message=FALSE, results='hide'}
 
@@ -163,7 +163,8 @@ corrplot(cor(OHE_emailDRrp[c(10:20,1)]))
 corrplot(cor(OHE_emailDRrp[c(20:30,1)]))
 
 ```
-From the correlation plot thre are some features that show high correlation. In summary, highly correlated features are
+
+From the correlation plot, there are some features that show high correlation. In summary, highly correlated features are as follow:
 
 * isInReplyTo and isRE
 * numLines and bodyCharCt
@@ -173,9 +174,9 @@ It should also be noted at this point that in order to achieve accurate correlat
 
 # Data Analysis
 
-Moving into the data analysis phase where classification of an email as spam or not-spam can begin to occur, the first step that needs to occur is building out training and test datasets. Breaking the data out into a training and test dataset allows for model building, using the training data set, and then model evaluation can occur on the test dataset. Building out two data sets in this way assists in managing model overfitting.
+Moving into the data analysis phase where classification of an email as spam or not-spam can begin to occur, the first step that needs to occur is building out training and test datasets. Breaking the data out into a training and test dataset allows for model building and evaluating that model's efficiency, using the training data set, and then model evaluation can occur on the test dataset. Building out two data sets in this way assists in managing model over-fitting as well.
 
-We selected an 80/20 split of our test and train data set as we felt it provided enough data to accurately construct our model with.
+The project team selected an 80/20 split of our test and train data set as we felt it provided enough data to accurately construct and test our model with.
 
 ```{r, echo=FALSE, message=FALSE}
 # build out training and test data. We'll use an 80/20 split to start
@@ -195,9 +196,9 @@ Starting off the classification of email message the first step will be to begin
 model = rpart(formula=isSpam~., data=train_df,method="class")
 fancyRpartPlot(model,caption="Initial Tree")
 ```
-As shown above the tree is relatively large but does provide an idea about how an email message may be classified as spam or not-spam. Using this base tree the overall accuracy of the model can be evaluated. Again this will help determine a baseline for analysis as future trees are developed. 
+As shown above the tree is relatively large but does provide an idea about how an email message may be classified as spam or not-spam. Using this base tree, the overall accuracy of the model can be evaluated. Again, this will help the project team determine a baseline for the analysis as future trees are developed. 
 
-In evaluating this tree, the first node starts with the perCaps feature. If perCaps is less than 1.3 the values move to the left of the tree. If they are greater they move to the right of the tree. Following the right side of the tree, the next test is the numLines feature. If the numLines is less than 1.2 the data moves to the left node and those values greater move to the right. Continuing right from numLines, the isInReplyTo feature is tested. If this feature is true the email is classified as spam. If it is false then the email is classified as not-spam. Following a simlar process as outlined above can be done for all nodes in the tree and will provide an indication on how the new emails may be classified.
+In evaluating this tree, the first node starts with the perCaps feature. If perCaps is less than 1.3 the values move to the left of the tree. If they are greater they move to the right of the tree. Following the right side of the tree, the next test is the numLines feature. If the numLines is less than 1.2 the data moves to the left node and those values greater move to the right. Continuing right from numLines, the isInReplyTo feature is tested. If this feature is true the email is classified as spam. If it is false then the email is classified as not-spam. Following a similar process as outlined above can be done for all nodes in the tree and will provide an indication on how the new emails may be classified.
 
 We can also clearly see that isinReplyTo is a major decision node for this tree as postulated above during our EDA processing.
 
@@ -205,9 +206,9 @@ We can also clearly see that isinReplyTo is a major decision node for this tree 
 predTest = predict(object=model, newdata=test_df, type="class")
 confusionMatrix(data=predTest, reference=test_df$isSpam)
 ```
-From the confusion matrix above the overall accuracy of the first tree configuration is approximately 91%. Of the 1809 records in the test data set, 1271 were accurately classified as not-spam and 376 were accurately classified as spam. 
+From the confusion matrix above, the overall accuracy of the first tree configuration is approximately 91%. Of the 1809 records in the test data set, 1271 were accurately classified as not-spam and 376 were accurately classified as spam. 
 
-To help with any possible over fitting the tree can be pruned. Pruning trees attempts to get to a more optimal tree by removing nodes in the tree and stopping at what the modeler deems is an acceptable stopping criteria. To determine what that stopping criteria could be, investigation of the error in the original tree is helpful. The plot below shows the cross validation error for each split that can be used to prune the tree. From the plot the cp equal to approximately 0.014 would be a good spot to prune the tree.
+To help with any possible over fitting, the tree can be pruned. The method of pruning trees is a process that attempts to get our results to a more optimal tree by removing nodes in the tree and stopping at what the modeler deems is an acceptable stopping criteria. To determine what that stopping criteria could be, investigation of the error in the original tree is helpful. The plot below shows the cross validation error for each split that can be used to prune the tree. From the plot the cp equal to approximately 0.014 would be a good spot to prune the tree.
 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
  plotcp(model)
@@ -218,12 +219,13 @@ pruneModel = prune(model, cp=model$cptable[which.min(model$cptable[,"xerror"]),"
 fancyRpartPlot(pruneModel,caption="Pruned Tree")
 ```
 
-The pruned tree looks very similar to the initial tree. This is also confirmed by the confusion matrix results shown below. No change is seen between the initial tree and the pruned tree. The overall accuracy of the pruned tree configuration is approximately 91%. Of the 1809 records in the test data set, 1271 were accurately classified as not-spam and 376 were accurately classified as spam. 
+The pruned tree looks very similar to the initial tree. This result is also confirmed by the confusion matrix results shown below. No change is seen between the initial tree and the pruned tree. The overall accuracy of the pruned tree configuration is approximately 91%. Of the 1809 records in the test data set, 1271 were accurately classified as not-spam and 376 were accurately classified as spam. 
 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
 predTest = predict(object=pruneModel, newdata=test_df, type="class")
 confusionMatrix(data=predTest, reference=test_df$isSpam)
 ```
+
 The lack of change between the original tree and pruned tree could be due to the imbalanced classes as related to the isSpam feature. As noted previously, there are more non-spam emails than spam emails in the data set. This could be impact the overall model accuracy. In order to overcome this possible over fitting evaluating the data leveraging a cross fold validation method may be called for. The cross fold validation method will also assist in dealing with the class inequality in the spam and not-spam values. 
 
 In cross fold validation, the dataset is broken up into a number of groups. Each of these groups is called a fold, denoted by the value 'k'. Each fold is then used as a testing and training data set. For purposes of this exercise k will be equal to 5 and this will be repeated 5 times. 
@@ -237,6 +239,7 @@ modelCV = train(x=train_df[,-1],y=train_df[,1], method="rpart", tuneLength=30,tr
 
 fancyRpartPlot(modelCV$finalModel, caption="CV Tree - Initial")
 ```
+
 Using this new tree development approach resulted in a much larger tree than the first tree build. Evaluating the confusion matrix, shown below, of this new approach will provide guidance on whether the predictions are getting better or worse.
 
 ```{r,echo=FALSE,message=FALSE}
@@ -244,11 +247,11 @@ predTest = predict(object=modelCV$finalModel, newdata=test_df, type="class")
 confusionMatrix(data=predTest, reference=test_df$isSpam)
 ```
 
-The confusion matrix for the cross fold validation approach resulted in a higher accuracy of approximately 93%. Of the 1809 records in the test data set, 1296 were accurately classified as not-spam and 401 were accurately classified as spam. Taking this approach has resulted in better accuracy, however there are still other methods that will provide better results with respect to other metrics that will provide more confidence in classifying emails as spam or not-spam.
+The confusion matrix for the cross fold validation approach resulted in a higher accuracy of approximately 93%. Of the 1809 records in the test data set, 1296 were accurately classified as not-spam and 401 were accurately classified as spam. Taking this approach have resulted in better accuracy, however there are still other methods that will provide better results with respect to other metrics that will provide more confidence in classifying emails as spam or not-spam.
 
 ## Random Forest
 
-Another approach that can be leveraged for classification is Random Forest. Using Random Forest multiple trees are built that are compared together to evaluate which tree is the best. Additionally, with Random Forest the most important variables that impact the tree creation can be evaluated. For the analysis of Random Forest 500 trees will be generated and the default for classification of using the square root of the number of features will be used when evaluating the number of features used in the construction of each tree. The model summary is presented below.
+Another approach that can be leveraged for classification is Random Forest. Using Random Forest multiple trees are built that are compared together to evaluate which tree is the best. Additionally, with Random Forest, the most important variables that impact the tree creation can be evaluated. For the analysis of Random Forest 500 trees will be generated and the default for classification of using the square root of the number of features will be used when evaluating the number of features used in the construction of each tree. The model summary is presented below.
 
 ```{r,echo=FALSE,message=FALSE,warning=FALSE}
 #Build out random forest for analysis
@@ -296,12 +299,12 @@ CM_Result  <- confusionMatrix(predictVal,test_df$isSpam)
 CM_Result
 ```
 
-Utilizing random forest the model accuracy has increased to 97%. The model successfully classified 1321 non-spam emails as spam and 443 spam emails as spam. Indications seems to indicate that this model is better than the initial tree based models that were built. To a degree this is expected since a random forest classifier is building multiple trees versus the single trees in the initial outset. 
+Utilizing Random Forest, the model accuracy has increased to 97%. The model successfully classified 1321 non-spam emails as spam and 443 spam emails as spam. Indications seems to indicate that this model is better than the initial tree based models that were built. To a degree this is expected since a random forest classifier is building multiple trees versus the single trees in the initial outset. 
 
 
 ## Grid Search 
 
-Another approach that could be used to build a tree is the grid search method to aid us with hyperparameter tuning. In the code below, we specify a range of hyperparamter settings (in this case minsplit and maxdepth) and then iterate through them to see which displays the best model. Hyperparameter tuning is useful because it helps us quickly identify the likely best parameters to use in construction of our decision tree. In future iterations to speed up analysis, other grid search methods can be used. We tried 'Ranger' which significantly sped up processing time, but did not improve the results - so it was not included in our analysis.
+Another approach that could be used to build a tree is the grid search method to aid us with hyper-parameter tuning. In the code below, we specify a range of hyper-paramter settings (in this case minsplit and maxdepth) and then iterate through them to see which displays the best model. Hyper-parameter tuning is useful because it helps us quickly identify the likely best parameters to use in construction of our decision tree. In future iterations to speed up analysis, other grid search methods can be used. We tried 'Ranger' which significantly sped up processing time, but did not improve the results - so it was not included in our analysis.
 
 ```{r, echo=FALSE, message=FALSE}
 
@@ -342,8 +345,7 @@ gs
 
 ```
 
-
-As you can see from the below, this tree doesn't look all that different from our initial trees. The marked difference however is the approach we used to define the optimal parameters using grid search to define the model. Given the accuracy score above (0.92), and the visualized model below, we can conclude that while the grid search method performs better than our initial model (0.91), the random forest model with an accuracy of 0.97 performs much better than this model and the initial model. 
+As you can see from the below, this tree doesn't look all that different from our initial trees. The marked difference however, is the approach we used to define the optimal parameters using grid search to define the model. Given the accuracy score above (0.92), and the visualized model below, we can conclude that while the grid search method performs better than our initial model (0.91), the random forest model with an accuracy of 0.97 performs much better than this model and the initial model. 
 
 ```{r,echo=FALSE,message=FALSE}
 gs_model = rpart(formula=isSpam~., data=train_df,method="class", minsplit = 2, maxdepth=13)
@@ -353,13 +355,6 @@ fancyRpartPlot(gs_model,caption="Grid Search Tree")
 
 # Conclusion
 
-In conclusion this report has leveraged multiple tree-based classification models to determine if an email is spam or not-spam. Initially we started with a basic classification tree and evaluated the dataset to see how it would perform. That initial tree was then pruned in an attempt to obtain a better result. In this particular instance there was no difference seen between the pruned and non-pruned trees. We then attempted to leverage random forest as a way to classify the emails. Random forest allowed for building multiple trees at once to obtain a result. The final approach we leveraged was grid search. Through grid search we attempted to use hyperparameter tuning to classify the email results and optimized our parameter selection.
+In conclusion, this report has leveraged multiple tree-based classification models to determine if an email is spam or not-spam. Initially we started with a basic classification tree and evaluated the dataset to see how it would perform. That initial tree was then pruned in an attempt to obtain a better result. In this particular instance there was no difference seen between the pruned and non-pruned trees. We then attempted to leverage Random Forests as a way to classify the emails in our dataset. Random Forest allowed for building multiple trees at once to obtain a result. The final approach we leveraged was grid search. Through grid search we attempted to use hyper-parameter tuning to classify the email results and optimized our parameter selection.
 
-Our results indicate that the random forest model performed better than all other tree models attempted; with an accuracy score of 0.97, the random forest model is a much better choice for identifying spam records in this data set compared to the other tree models attempted. One potential improvement on the random forest model would be to use grid searching to identify better performing parameters to see if the accuracy score would increase. A more balanced data set would also be useful to validate whether our models continue to be accurate.
-
-
-
-
-
-
-
+Our results indicate that the Random Forest model performed better than all other tree models attempted; with an accuracy score of 0.97, the random forest model is a much better choice for identifying spam records in this data set compared to the other tree models attempted. One potential improvement on the random forest model would be to use grid searching to identify better performing parameters to see if the accuracy score would increase. A more balanced data set would also be useful to validate whether our models continue to be accurate in more diverse environments.
