@@ -7,7 +7,7 @@ output:
 ---
 
 # Business Understanding
-Spam emais are unsolicited and unwanted junk email generally sent out in bulk to an indiscriminate recipient list. Spam is typically sent out for commercial purposes, but may also be leveraged for nefarious purposes such as scams and phishing attempts. These emails are typically sent out in bulk through botnets which are networks of infected computers. According to multiple internet sites, spam email accounts for 14.5 billion email message globally per day. This makes up approximately 45% of all emails. With this massively increased quantity of spam emails, it's common that spam can mix with regular emails which users need to address for business or personal purposes, thus making managing one's email inbox more difficult and likely riskier for unaware users to use.
+Spam emails are unsolicited and unwanted junk email generally sent out in bulk to an indiscriminate recipient list. Spam is typically sent out for commercial purposes, but may also be leveraged for nefarious purposes such as scams and phishing attempts. These emails are typically sent out in bulk through botnets which are networks of infected computers. According to multiple internet sites, spam email accounts for 14.5 billion email message globally per day. This makes up approximately 45% of all emails. With this massively increased quantity of spam emails, it's common that spam can mix with regular emails which users need to address for business or personal purposes, thus making managing one's email inbox more difficult and likely riskier for unaware users to use.
 
 To overcome the magnitude of spam emails and the interference of spam with regular emails, being able to classify an email as spam or not-spam (aka ham) becomes a necessity. This problem has been solved in multiple ways by various technology vendors such as Microsoft and Google. For the purposes of this report, the project team will setup a process to classify emails as spam or not-spam through decision tree based approaches, using the data which includes indicators denoting spam messages. 
 
@@ -72,7 +72,7 @@ croom_wd = "C:/RAI/DS7333-QTW/CaseStudy3/"
 barker_wd = "F:/SMU/DS7333/Repo/DS7333-QTW/CaseStudy3"
 weinstock_wd = ""
 
-setwd(barker_wd)
+setwd(croom_wd)
 
 load("data.rda")
 ```
