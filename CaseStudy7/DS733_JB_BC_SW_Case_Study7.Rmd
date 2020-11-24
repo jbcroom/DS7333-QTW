@@ -1,5 +1,108 @@
 ---
-title: "MSDS 7333 Fall 2020: Case Study 7"
+title: "MSDS 7333 Fall 2020: Final Case Study"
 author: "Jayson Barker, Brandon Croom, Shane Winestock"
 output: html_document
 ---
+
+# Business Understanding
+
+The goal of this case is to provide business clients an understanding of how to approach a data science problem and to minimize dollar cost based on those data science decisions. For this case the following information has been provided:
+
+* A data set with unknown data
+* A request to classify the column labeled "y" in the data set
+
+In addition to the data, information on the cost of decisions has also been provided. The decision cost breaks down as follows:
+
+* True Positives - $0
+* True Negatives - $0
+* False Positive - $10
+* False Negative - $500
+
+This information allows for understanding that correctly classifying the data does not cost the company anything. Classifying the data as true when it is false (False Positive) costs the company $10. Classifying the data as false when it is true (False Negative) costs the company $500. As the classification models are built one of the key goals will be to minimize the cost associated with these values. 
+
+
+# Data Understanding
+
+The first step to approaching a data science problem is to understand the data that is available for use. In this particular case a data set of unknown data has been provided. For this data set, there is no metadata nor column headers available to make data inferences from. After loading the data, the data types will be evaluated. This will provide an understanding of how the data columns are structured and begin to paint a picture for analysis. 
+```{r libLoad, message=FALSE,warning=FALSE,results='hide',echo=FALSE}
+# Load necessary libraries for analysis
+library(data.table)
+library(tidyverse)
+library(ggplot2)
+
+#Code to install Data Explorer below
+#if (!require(devtools)) install.packages("devtools")
+#devtools::install_github("boxuancui/DataExplorer")
+library(DataExplorer)
+```
+
+```{r dataLoad, message=FALSE, warning=FALSE, echo=FALSE}
+# read in the data file
+df = read.csv(file.choose(),header=TRUE)
+```
+
+In evaluating the data, the following summary information can be obtained. There are:
+
+```{r, message=FALSE, warning=FALSE, echo=FALSE}
+output = introduce(df)
+output = cbind(variable=names(output),t(output))
+as.data.table(output)
+```
+The output below shows this columns are the discrete columns (noted as character) and which are continuous (noted as numeric).
+
+```{r, message=FALSE, warning=FALSE, echo=FALSE}
+output <- data.frame(sapply(df,class))                    
+output <- cbind(variable = names(df), output)
+as.data.table(output)
+```
+In evaluating the missing data, the following 5 plots will assist in understanding the percentages of missing data by individual column. The plots indicate there is at most 0.03% of the data missing in any column. This would indicate that there are not large swaths of data missing in columns.   
+```{r, echo=FALSE,message=FALSE, warning=FALSE}
+plot_missing(df[1:10], title = "Plot of Missing Values: 1 - 10")
+plot_missing(df[11:20], title = "Plot of Missing Values: 11 - 20")
+plot_missing(df[21:30],title = "Plot of Missing Values: 21 - 30")
+plot_missing(df[31:40],title = "Plot of Missing Values: 31 - 40")
+plot_missing(df[41:51],title = "Plot of Missing Values: 41 - 51")
+```
+
+Now that the amount of missing data in the data set is understood, the evaluation of the discrete and continuous variables must be undertaken. The discrete variables will be addressed first. From the bar charts below the buckets that each data value is associated with is shown. This allows for additional data understanding. For example, in evaluating variable x29, events seem to occur more in the summer months (June, July, August). Similarly for variable x30, events seem to occur more on Wednesdays than other days of the week. Additionally, this analysis provides a quick look into the categorization variable (y). From the bar chart, it can be seen that there is not a large class imbalance in the variable. If such an imbalance existed additional steps would need to be undertaken to address this prior to analysis. 
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+ plot_bar(df,title="Bar Plots of Discrete Variables")
+```
+Moving on to the continuous variables, histogram plots will be leveraged for analysis. Histogram plots will provide an understanding of the data distribution. From the histogram plots below, the data look to be normally distributed for all of the continuous variables. This indicates there are no data outliers that need to be addressed and no data wrangling that needs to occur for correction. 
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+ plot_histogram(df, Title="Histogram Plots of Continuous Variables")
+```
+
+The final portion of data understanding to address is to evaluate the correlation between variables. Evaluating correlation allows for understanding if variables are related to one another. This correlation between variables may allow for the removal of highly correlated variables. The same information will be understood if only one of the variables is present thus the model may be simplified by removing a variable.
+
+Given the number of variables in the data a full correlation plot will be difficult to read. The correlations plots will be broken down into the discrete and continuous variables. The plot below shows the correlation plot for the discrete variables. From the plot a few items are seen:
+* There is a negative correlation between the x24 values of Europe and Asia
+* There is a negative correlation between x30 values for Wednesday, Monday and Tuesday
+* The remainder of the values have very little correlation
+
+```{r, echo=FALSE,message=FALSE, warning=FALSE}
+plot_correlation(df,type="discrete", title="Correlation Plot: Discrete Variables")
+```
+The plot below shows the correlation plot for the continuous variables. From the plot it does not seem that there is any correlation between the continuous variables. 
+```{r, echo=FALSE,message=FALSE, warning=FALSE}
+plot_correlation(df,type="continuous", title="Correlation Plot: Continuous Variables")
+```
+
+To summarize the data discovery portion of this case:
+* Data looks relatively clean
+* There are a few elements of missing data that will need to be cleaned up
+* The discrete variables have a few correlations
+* The continuous variables have no correlations.
+
+# Addressing Data Issues
+
+The key data issue that needs to be addressed is the missing data. As previously noted there are 1466 missing values across the data set. It seems that the data is missing at random. This missing data approach provides flexibility in that missing data can be excluded from the observations. Attempts could be made to impute the missing data, however given that the missing data represents only 1% of the overall data set the initial approach will be to simply exclude the missing data from analysis.
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+ df2 = na.omit(df)
+```
+
+# Modeling Approach
+
+
+# Conclusion
