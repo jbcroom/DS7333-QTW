@@ -21,7 +21,7 @@ In addition to the data, information on the cost of decisions has also been prov
 This information allows for understanding that correctly classifying the data does not cost the company anything. Classifying the data as true when it is false (False Positive) costs the company $10. Classifying the data as false when it is true (False Negative) costs the company $500. As the classification models are built one of the key goals will be to minimize the cost associated with these values. 
 
 
-# Data Understanding
+# Initial Data Understanding
 
 The first step to approaching a data science problem is to understand the data that is available for use. In this particular case a data set of unknown data has been provided. For this data set, there is no metadata nor column headers available to make data inferences from. After loading the data, the data types will be evaluated. This will provide an understanding of how the data columns are structured and begin to paint a picture for analysis. 
 ```{r libLoad, message=FALSE,warning=FALSE,results='hide',echo=FALSE}
@@ -29,6 +29,11 @@ The first step to approaching a data science problem is to understand the data t
 library(data.table)
 library(tidyverse)
 library(ggplot2)
+library(caret)
+library(randomForest)
+library(rpart)
+library(rpart.plot)
+library(rattle)
 
 #Code to install Data Explorer below
 #if (!require(devtools)) install.packages("devtools")
@@ -55,7 +60,7 @@ output <- data.frame(sapply(df,class))
 output <- cbind(variable = names(df), output)
 as.data.table(output)
 ```
-In evaluating the missing data, the following 5 plots will assist in understanding the percentages of missing data by individual column. The plots indicate there is at most 0.03% of the data missing in any column. This would indicate that there are not large swaths of data missing in columns.   
+In evaluating the missing data, the following 5 plots will assist in understanding the percentages of missing data by individual column. The plots indicate there is at most 0.06% of the data missing in any column. This would indicate that there are not large swaths of data missing in columns.   
 ```{r, echo=FALSE,message=FALSE, warning=FALSE}
 plot_missing(df[1:10], title = "Plot of Missing Values: 1 - 10")
 plot_missing(df[11:20], title = "Plot of Missing Values: 11 - 20")
@@ -64,15 +69,60 @@ plot_missing(df[31:40],title = "Plot of Missing Values: 31 - 40")
 plot_missing(df[41:51],title = "Plot of Missing Values: 41 - 51")
 ```
 
-Now that the amount of missing data in the data set is understood, the evaluation of the discrete and continuous variables must be undertaken. The discrete variables will be addressed first. From the bar charts below the buckets that each data value is associated with is shown. This allows for additional data understanding. For example, in evaluating variable x29, events seem to occur more in the summer months (June, July, August). Similarly for variable x30, events seem to occur more on Wednesdays than other days of the week. Additionally, this analysis provides a quick look into the categorization variable (y). From the bar chart, it can be seen that there is not a large class imbalance in the variable. If such an imbalance existed additional steps would need to be undertaken to address this prior to analysis. 
+Now that the amount of missing data in the data set is understood, the evaluation of the discrete and continuous variables must be undertaken. The discrete variables will be addressed first. From the bar charts below the buckets that each data value is associated with is shown. This allows for additional data understanding. For example, in evaluating variable x29, events seem to occur more in the summer months (June, July, August). Similarly for variable x30, events seem to occur more on Wednesdays than other days of the week. This analysis also points out a possible issue with data cleaning that needs to occur. Variable x32 looks to actually be a numeric value, but is being treated as categorical due to the percentage size inside the data. That value will be stripped out to make it more appropriate for analysis. Additionally, this analysis provides a quick look into the categorization variable (y). From the bar chart, it can be seen that there is not a large class imbalance in the variable. If such an imbalance existed additional steps would need to be undertaken to address this prior to analysis. 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
  plot_bar(df,title="Bar Plots of Discrete Variables")
 ```
-Moving on to the continuous variables, histogram plots will be leveraged for analysis. Histogram plots will provide an understanding of the data distribution. From the histogram plots below, the data look to be normally distributed for all of the continuous variables. This indicates there are no data outliers that need to be addressed and no data wrangling that needs to occur for correction. 
+Moving on to the continuous variables, histogram plots will be leveraged for analysis. Histogram plots will provide an understanding of the data distribution. From the histogram plots below, the data look to be normally distributed for all of the continuous variables. This indicates there are no data outliers that need to be addressed and no data wrangling that needs to occur for correction.
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
- plot_histogram(df, Title="Histogram Plots of Continuous Variables")
+ plot_histogram(df, title="Histogram Plots of Continuous Variables")
+```
+Evaluating all of the plots for both the discrete and continuous variables also shows that one value, x37, is missing from any of the plots. Upon investigation that field seems to be a currency field. This field contains the dollar sign ($) symbol which is not getting picked up correctly. 
+
+To summarize the data discovery portion of this case:
+* There are a few elements of missing data that will need to be cleaned up
+* There are characters in the data that need to be cleaned up.
+
+## Addressing Data Issues
+
+As discussed previously there are characters in values that should be treated as numeric. Specifically in variable x32 there is a percentage sign and in variable x37 there is a dollar sign. If these characters are not removed from the analysis then there will be issues with model building.
+```{r, echo=FALSE, message=FALSE, warning=FALSE, output=FALSE}
+df <- df %>% mutate(x32 = as.numeric(gsub("%", "", x32)))
+df <- df %>% mutate(x37 = as.numeric(gsub("\\$", "", x37)))
+
+df %>% 
+  mutate(across(where(is.character), str_trim))
+
 ```
 
+The key data issue that needs to be addressed is the missing data. As previously noted there are 1466 missing values across the data set. It seems that the data is missing at random. This missing data approach provides flexibility in that missing data can be excluded from the observations. Attempts could be made to impute the missing data, however given that the missing data represents only 1% of the overall data set the initial approach will be to simply exclude the missing data from analysis.
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+ df = na.omit(df)
+```
+
+
+## Data Cleanup Verification
+
+Now that all data has been cleaned and confirmed to be appropriate, the analysis for discrete and continuous variables will be executed to verify that everything is cleaned as it should be. First, the bar plots of the discrete variables will be executed. Finally, the histogram plots for the continuous variables will be executed. 
+
+First, re-evaluate the data set at a high level to ensure that the original variables that needed cleaning show as expected.
+
+```{r, message=FALSE, warning=FALSE, echo=FALSE}
+output = introduce(df)
+output = cbind(variable=names(output),t(output))
+as.data.table(output)
+```
+
+Evaluating the discrete value plots indicates that variable x32 has been categorized as continuous instead of discrete. This gives us 3 discrete variables for evaluation. 
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+ plot_bar(df,title="Bar Plots of Discrete Variables")
+```
+Reviewing the continuous variables, variable x37 is now showing as a continuous variable which indicates that data correction has been completed. 
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+ plot_histogram(df,title="Bar Plots of Continuous Variables")
+```
 The final portion of data understanding to address is to evaluate the correlation between variables. Evaluating correlation allows for understanding if variables are related to one another. This correlation between variables may allow for the removal of highly correlated variables. The same information will be understood if only one of the variables is present thus the model may be simplified by removing a variable.
 
 Given the number of variables in the data a full correlation plot will be difficult to read. The correlations plots will be broken down into the discrete and continuous variables. The plot below shows the correlation plot for the discrete variables. From the plot a few items are seen:
@@ -83,26 +133,127 @@ Given the number of variables in the data a full correlation plot will be diffic
 ```{r, echo=FALSE,message=FALSE, warning=FALSE}
 plot_correlation(df,type="discrete", title="Correlation Plot: Discrete Variables")
 ```
-The plot below shows the correlation plot for the continuous variables. From the plot it does not seem that there is any correlation between the continuous variables. 
+
+The plot below shows the correlation plot for the continuous variables. From the plot below there is high correlation between variables x2 and x6, as well as between x38 and x41. 
 ```{r, echo=FALSE,message=FALSE, warning=FALSE}
 plot_correlation(df,type="continuous", title="Correlation Plot: Continuous Variables")
 ```
 
-To summarize the data discovery portion of this case:
-* Data looks relatively clean
-* There are a few elements of missing data that will need to be cleaned up
-* The discrete variables have a few correlations
-* The continuous variables have no correlations.
-
-# Addressing Data Issues
-
-The key data issue that needs to be addressed is the missing data. As previously noted there are 1466 missing values across the data set. It seems that the data is missing at random. This missing data approach provides flexibility in that missing data can be excluded from the observations. Attempts could be made to impute the missing data, however given that the missing data represents only 1% of the overall data set the initial approach will be to simply exclude the missing data from analysis.
-
-```{r, echo=FALSE, message=FALSE, warning=FALSE}
- df2 = na.omit(df)
-```
-
 # Modeling Approach
 
+As part of the modeling approach a training data set and testing data set will need to be created. Creating these individual data sets will allow testing the models against a set of data, the training set, and validating that model with the testing set. This approach will allow for validation that models are performing appropriately and allow for model comparison. In building out the training and test data sets an 80/20 split will be leveraged. This will put 80% of the data in the training data set and 20% in the test data set. With this approach the training set and test set will have the values specified below. 
 
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+set.seed(100)
+cntTrainRecs = createDataPartition(y=df$y,p=0.8,list=FALSE)
+train_df = df[cntTrainRecs,]
+test_df = df[-cntTrainRecs,]
+
+print(paste("Training Set Size: " ,dim(train_df)[1]))
+print(paste("Test Set Size: " ,dim(test_df)[1]))
+```
+
+Given that the problem provided is a binary classification problem there are multiple approaches that can be taken to model the problem. For this case logistic regression and random forest trees will be evaluated. Both of these approaches are realatively quick to execute and the outputs are easily explainable. 
+
+## Logistic Regression
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+logRegress = glm(formula= y~., family=binomial, data=train_df)
+```
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+summary(logRegress)
+```
+```{r,echo=FALSE,message=FALSE,warning=FALSE}
+# get variable importance - Probably should plot
+varImp(logRegress)
+
+```
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+#Predict
+predictLogRegress = predict(logRegress,test_df,type="response")
+
+#output the confusion matrix
+table(test_df$y,predictLogRegress >= 0.5)
+
+```
+
+## Random Forest
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+#Build out random forest for analysis
+set.seed(100)
+
+#Mtry = sqrt(ncol(emailDFrp)-2)
+Ntrees = 500
+
+#track the processing time for grins
+startTime = proc.time()
+
+RFModel = randomForest(y~.-y,data=train_df,ntree=Ntrees, importance=TRUE)
+
+endTime = proc.time()
+```
+```{r,echo=FALSE,message=FALSE}
+# Display the model for accuracy understanding
+RFModel
+```
+
+```{r,echo=FALSE,message=FALSE}
+# Determine which factors have the most importance
+#importance(RFModel)
+#NOTE: Plotting the top 15 variables here for readability. most trail off under 30ish
+varImpPlot(RFModel,main="Variable Importance Plot",n.var=15)
+```
+
+```{r,echo=FALSE,message==FALSE}
+# Build out a confusion matrix for analysis
+predictVal <- predict(RFModel, newdata=test_df)
+CM_Result  <- confusionMatrix(predictVal,test_df$y)
+CM_Result
+```
+## Grid Search
+
+```{r, echo=FALSE, message=FALSE}
+
+# Defines our parameters that will be used
+gs <- list(minsplit = c(2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30),
+           maxdepth = c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13)) %>% 
+  cross_df() # Convert to data frame
+
+# Our tree function
+mod <- function(...) {
+  rpart(formula=y~., data=train_df, ,method="class", control = rpart.control(...))
+}
+
+gs <- gs %>% mutate(fit = pmap(gs, mod))
+
+
+```
+
+```{r, echo=FALSE, message=FALSE}
+
+# Create an accuracy function to measure results
+compute_accuracy <- function(fit, test_features, test_labels) {
+  predicted <- predict(fit, test_features, type = "class")
+  mean(predicted == test_labels)
+}
+
+test_features <- train_df %>% select(-y)
+test_labels   <- train_df$y
+
+gs <- gs %>%
+  mutate(test_accuracy = map_dbl(fit, compute_accuracy,
+                                 test_features, test_labels))
+
+# Arrange the results to display the highest accuracy
+gs <- gs %>% arrange(desc(test_accuracy), desc(minsplit), maxdepth)
+gs
+
+```
+
+```{r,echo=FALSE,message=FALSE}
+gs_model = rpart(formula=y~., data=train_df,method="class", minsplit = 2, maxdepth=13)
+fancyRpartPlot(gs_model,caption="Grid Search Tree")
+```
 # Conclusion
