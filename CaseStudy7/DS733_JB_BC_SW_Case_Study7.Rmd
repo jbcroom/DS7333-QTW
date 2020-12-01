@@ -98,6 +98,30 @@ df %>%
   mutate(across(where(is.character), str_trim))
 
 ```
+```{r imputation}
+# create a new variable outside the pipeline
+df2 = df
+str(df)
+DataExplorer::plot_missing(df2)
+df3 = tail(df2, 10000)
+DataExplorer::plot_missing(df3)
+
+
+imp = mice(df3, print = FALSE, maxit = 0)
+plot_missing(imp$imp)
+head(imp$imp)
+
+predM <- imp$predictorMatrix
+meth <- imp$method
+
+imp2 <- mice(df3, maxit = 5, 
+             predictorMatrix = predM, 
+             method = meth, print =  TRUE)
+impcomp = mice::complete(imp2, 1)
+head(impcomp)
+plot_missing(impcomp)
+
+```
 
 The key data issue that needs to be addressed is the missing data. As previously noted there are 1466 missing values across the data set. It seems that the data is missing at random. This missing data approach provides flexibility in that missing data can be excluded from the observations. Attempts could be made to impute the missing data, however given that the missing data represents only 1% of the overall data set the initial approach will be to simply exclude the missing data from analysis.
 
