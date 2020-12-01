@@ -23,7 +23,7 @@ This information allows for understanding that correctly classifying the data do
 
 # Initial Data Understanding
 
-The first step to approaching a data science problem is to understand the data that is available for use. In this particular case a data set of unknown data has been provided. For this data set, there is no metadata nor column headers available to make data inferences from. After loading the data, the data types will be evaluated. This will provide an understanding of how the data columns are structured and begin to paint a picture for analysis. 
+The first step to approaching a data science problem is to understand the data that is available for use. In this particular case a data set of unknown origin / contents has been provided. For this data set, there is no metadata nor column headers available to make data inferences from. After loading the data, the data types will be evaluated. This will provide an understanding of how the data columns are structured and begin to paint a picture for analysis. 
 ```{r libLoad, message=FALSE,warning=FALSE,results='hide',echo=FALSE}
 # Load necessary libraries for analysis
 library(data.table)
@@ -34,6 +34,10 @@ library(randomForest)
 library(rpart)
 library(rpart.plot)
 library(rattle)
+library(class)
+
+#install.packages("gmodels")
+library(gmodels)
 
 #Code to install Data Explorer below
 #if (!require(devtools)) install.packages("devtools")
@@ -149,11 +153,37 @@ cntTrainRecs = createDataPartition(y=df$y,p=0.8,list=FALSE)
 train_df = df[cntTrainRecs,]
 test_df = df[-cntTrainRecs,]
 
+
 print(paste("Training Set Size: " ,dim(train_df)[1]))
 print(paste("Test Set Size: " ,dim(test_df)[1]))
 ```
 
+
 Given that the problem provided is a binary classification problem there are multiple approaches that can be taken to model the problem. For this case logistic regression and random forest trees will be evaluated. Both of these approaches are realatively quick to execute and the outputs are easily explainable. 
+
+
+# KNN Modelling
+
+We use KNN modelling here with a K = 15 to model for continuous variables against the dependent variable. 
+
+```{r}
+# Removing the character column values
+train_df_knn <- train_df[, -c(25,30,31)]
+test_df_knn <- test_df[, -c(25,30,31)]
+
+prc_test_pred <- knn(train = train_df_knn, test = test_df_knn, cl = train_df$y, k=15)
+```
+
+
+The results of our KNN model is shown below. We compare the results from our predicted KNN model against the actual test values for our dependent variable. From it, we can see across a total of 31,696 observations (test set), we have a true positive of  of: 16,704 and a true negative of: 9,915 = for a total accuracy of 83.982%. Using KNN is limited for this data set as there were character columns omitted from the model due to limitations. Had those been factored in, we'd likely see a score increase. KNN is likely not the optimal modelling choice here, but is a good first pass to identify that our character columns may have some role to play in improving the accuracy of the model.
+
+The true cost of implementing this model, if selected, would be $22,960 + $1,420,000 = 1,442,960. This further substantiates that KNN is likely not the model of choice if this rate / cost due to false negatives and positives is prohibitive.
+
+```{r}
+CrossTable(x=test_df$y, y = prc_test_pred, prop.chisq = FALSE)
+plot_df = 
+```
+
 
 ## Logistic Regression
 
@@ -169,6 +199,8 @@ summary(logRegress)
 varImp(logRegress)
 
 ```
+
+The accuracy of this model, across 31,696 observations is 70.45% (15,853 + 6,479)/31,696. Applying the cost-basis specified in the business requirements document, we have a total cost of implementation of: $30,950 + $3,134,500 = $3,165,450. This is higher than the KNN model demonstrated above and if this proves cost-prohibitve, another model may be the better choice.
 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
 #Predict
