@@ -37,6 +37,7 @@ library(rpart)
 library(rpart.plot)
 library(rattle)
 library(class)
+#install.packages("mice")
 library(mice)
 #install.packages("ranger")
 library(ranger)
@@ -45,7 +46,7 @@ library(ranger)
 library(gmodels)
 
 #Code to install Data Explorer below
-#if (!require(devtools)) install.packages("devtools")
+#f (!require(devtools)) install.packages("devtools")
 #devtools::install_github("boxuancui/DataExplorer")
 library(DataExplorer)
 ```
@@ -103,29 +104,31 @@ df %>%
   mutate(across(where(is.character), str_trim))
 
 ```
-```{r imputation}
-# create a new variable outside the pipeline
-#df2 = df
-#str(df)
-#DataExplorer::plot_missing(df2)
-#df3 = tail(df2, 10000)
-#DataExplorer::plot_missing(df3)
 
 
-#imp = mice(df3, print = FALSE, maxit = 0)
-#DataExplorer::plot_missing(imp$imp)
-#head(imp$imp)
+```{r, echo=FALSE,message=FALSE, warning=FALSE}
+# Below we use the MICE package to impute the missing values
+# Due to the size of the data, the number of iterations will be limited 
+#smallimp = tail(df, 1000)
+#imp = mice(smallimp, meth = "cart", minbucket = 5)
+#plot(imp)
+# imp$method
+# complete = mice::complete
+# plot_missing(mice::complete(imp, 1))
 
-#predM <- imp$predictorMatrix
-#meth <- imp$method
+imp = mice(df, method = "pmm", print = TRUE, minbucket = 2)
+plot(imp)
+imputed.df = mice::complete(imp, 1)
+imp$method
 
-#imp2 <- mice(df3, maxit = 5, 
-#             predictorMatrix = predM, 
-#             method = meth, print =  TRUE)
-#impcomp = mice::complete(imp2, 1)
-#head(impcomp)
-#plot_missing(impcomp)
+plot_missing(imputed.df[1:10], title = "Plot of Missing Values: 1 - 10")
+plot_missing(imputed.df[11:20], title = "Plot of Missing Values: 11 - 20")
+plot_missing(imputed.df[21:30],title = "Plot of Missing Values: 21 - 30")
+plot_missing(imputed.df[31:40],title = "Plot of Missing Values: 31 - 40")
+plot_missing(imputed.df[41:51],title = "Plot of Missing Values: 41 - 51")
 
+# pass to df
+# df = impted.df
 ```
 
 The key data issue that needs to be addressed is the missing data. As previously noted there are 1466 missing values across the data set. It seems that the data is missing at random. This missing data approach provides flexibility in that missing data can be excluded from the observations. Attempts could be made to impute the missing data, however given that the missing data represents only 1% of the overall data set the initial approach will be to simply exclude the missing data from analysis.
