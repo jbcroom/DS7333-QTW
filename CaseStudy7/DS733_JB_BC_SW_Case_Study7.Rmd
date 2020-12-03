@@ -1,7 +1,9 @@
 ---
-title: "MSDS 7333 Fall 2020: Final Case Study"
+title: 'MSDS 7333 Fall 2020: Final Case Study'
 author: "Jayson Barker, Brandon Croom, Shane Winestock"
-output: html_document
+output:
+  pdf_document: default
+  html_document: default
 ---
 
 # Business Understanding
@@ -9,7 +11,7 @@ output: html_document
 The goal of this case is to provide business clients an understanding of how to approach a data science problem and to minimize dollar cost based on those data science decisions. For this case the following information has been provided:
 
 * A data set with unknown data
-* A request to classify the column labeled "y" in the data set
+* A request to build a model that balances minimizing cost to the business but is accurate enough to apply to the business problem
 
 In addition to the data, information on the cost of decisions has also been provided. The decision cost breaks down as follows:
 
@@ -63,7 +65,7 @@ output = introduce(df)
 output = cbind(variable=names(output),t(output))
 as.data.table(output)
 ```
-The output below shows this columns are the discrete columns (noted as character) and which are continuous (noted as numeric).
+The output below shows these columns are the discrete columns (noted as character) and which are continuous (noted as numeric).
 
 ```{r, message=FALSE, warning=FALSE, echo=FALSE}
 output <- data.frame(sapply(df,class))                    
@@ -110,10 +112,24 @@ df %>%
 ```
 The key data issue that needs to be addressed is the missing data. As previously noted there are 1466 missing values across the data set. It seems that the data is missing at random. This missing data approach provides flexibility in that missing data can be excluded from the observations without dramatic impact. This missing data represents only 1% of the overall data set. However, to ensure as much data as possible is maintained an imputation attempt will be executed on the missing data. The plots below show the results of the imputation and show that there is less missing data in the data set. A couple of variables, x2 and x41, still maintain some missing data. Given the 1% impact, the final step will be to remove the missing data. Further investigation may be needed once a production model is chosen to build out the imputation of these specific variables. 
 
-```{r, echo=FALSE,message=FALSE, warning=FALSE}
+```{r, echo=FALSE,message=FALSE, warning=FALSE,results='hide',output=FALSE}
 # Below we use the MICE package to impute the missing values
 # Due to the size of the data, the number of iterations will be limited 
 imp = mice(df, method = "pmm", print = FALSE, minbucket = 2)
+#plot(imp)
+#imputed.df = mice::complete(imp, 1)
+#imp$method
+
+#plot_missing(imputed.df[1:10], title = "Plot of Missing Values: 1 - 10")
+#plot_missing(imputed.df[11:20], title = "Plot of Missing Values: 11 - 20")
+#plot_missing(imputed.df[21:30],title = "Plot of Missing Values: 21 - 30")
+#plot_missing(imputed.df[31:40],title = "Plot of Missing Values: 31 - 40")
+#plot_missing(imputed.df[41:51],title = "Plot of Missing Values: 41 - 51")
+
+# pass to df
+#df = imputed.df
+```
+```{r,echo=FALSE,message=FALSE, warning=FALSE}
 plot(imp)
 imputed.df = mice::complete(imp, 1)
 imp$method
@@ -343,4 +359,4 @@ tabl = "
 cat(tabl) # output the table in a format good for HTML/PDF/docx conversion
 ```
 
-From these current modeling initiatives the Random Forest model seems to be the best model with the lowest Classification Cost penalty. If explainability of the model is of concern, this choice provides some good indicators but may be difficult to provide full transparency of the model if that is required. Thus another model with more transparency may be used, but could have a higher Classification Cost.
+From these current modeling initiatives the Random Forest model seems to be the best model with the lowest Classification Cost penalty - at $761,590. This is substantially lower cost than the KNN, Logistic Regression, and Basic Tree models performed. If the business is looking to keep costs low and maintain a high-level of accuracy in the model selected, we recommend using Random Forest with 1,000 trees. If explainability of the model is of concern however, this choice provides some good indicators but may be difficult to provide full transparency of the model if that is required. Thus another model with more transparency may be used, but could have a higher Classification Cost.
