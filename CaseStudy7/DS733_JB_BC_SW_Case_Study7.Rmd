@@ -22,10 +22,10 @@ This information allows for understanding that correctly classifying the data do
 
 For the purposes of this analysis two metrics will be leveraged to compare the classification models: accuracy and classification cost. The accuracy metric will identify how well the model performed in classifying the data values. High accuracy means either the model is performing well of the model is over-fitting on the data. Data over-fitting is detrimental for analysis purposes in that new data may not get classified correctly. This is where the classification cost metric comes into the picture. Using the information provided above, a classification cost for each model will be calculated. This will allow for an understanding of the impact poor classification has from a financial perspective. The combination of these two metrics should provide good initial guidance for model selection. 
 
-
 # Initial Data Understanding
 
 The first step to approaching a data science problem is to understand the data that is available for use. In this particular case a data set of unknown origin / contents has been provided. For this data set, there is no metadata nor column headers available to make data inferences from. After loading the data, the data types will be evaluated. This will provide an understanding of how the data columns are structured and begin to paint a picture for analysis. 
+
 ```{r libLoad, message=FALSE,warning=FALSE,results='hide',echo=FALSE}
 # Load necessary libraries for analysis
 library(data.table)
@@ -71,6 +71,7 @@ output <- cbind(variable = names(df), output)
 as.data.table(output)
 ```
 In evaluating the missing data, the following 5 plots will assist in understanding the percentages of missing data by individual column. The plots indicate there is at most 0.03% of the data missing in any column. This would indicate that there are not large swaths of data missing in columns.   
+
 ```{r, echo=FALSE,message=FALSE, warning=FALSE}
 plot_missing(df[1:10], title = "Plot of Missing Values: 1 - 10")
 plot_missing(df[11:20], title = "Plot of Missing Values: 11 - 20")
@@ -80,10 +81,12 @@ plot_missing(df[41:51],title = "Plot of Missing Values: 41 - 51")
 ```
 
 Now that the amount of missing data in the data set is understood, the evaluation of the discrete and continuous variables must be undertaken. The discrete variables will be addressed first. From the bar charts below the buckets that each data value is associated with is shown. This allows for additional data understanding. For example, in evaluating variable x29, events seem to occur more in the summer months (June, July, August). Similarly for variable x30, events seem to occur more on Wednesdays than other days of the week. This analysis also points out a possible issue with data cleaning that needs to occur. Variable x32 looks to actually be a numeric value, but is being treated as categorical due to the percentage size inside the data. That value will be stripped out to make it more appropriate for analysis. Additionally, this analysis provides a quick look into the categorization variable (y). From the bar chart, it can be seen that there is not a large class imbalance in the variable. If such an imbalance existed additional steps would need to be undertaken to address this prior to analysis. 
+
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
  plot_bar(df,title="Bar Plots of Discrete Variables")
 ```
 Moving on to the continuous variables, histogram plots will be leveraged for analysis. Histogram plots will provide an understanding of the data distribution. From the histogram plots below, the data look to be normally distributed for all of the continuous variables. This indicates there are no data outliers that need to be addressed and no data wrangling that needs to occur for correction.
+
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
  plot_histogram(df, title="Histogram Plots of Continuous Variables")
 ```
@@ -96,6 +99,7 @@ To summarize the data discovery portion of this case:
 ## Addressing Data Issues
 
 As discussed previously there are characters in values that should be treated as numeric. Specifically in variable x32 there is a percentage sign and in variable x37 there is a dollar sign. If these characters are not removed from the analysis then there will be issues with model building.
+
 ```{r, echo=FALSE, message=FALSE, warning=FALSE, output=FALSE}
 df <- df %>% mutate(x32 = as.numeric(gsub("%", "", x32)))
 df <- df %>% mutate(x37 = as.numeric(gsub("\\$", "", x37)))
@@ -104,19 +108,12 @@ df %>%
   mutate(across(where(is.character), str_trim))
 
 ```
-
+The key data issue that needs to be addressed is the missing data. As previously noted there are 1466 missing values across the data set. It seems that the data is missing at random. This missing data approach provides flexibility in that missing data can be excluded from the observations without dramatic impact. This missing data represents only 1% of the overall data set. However, to ensure as much data as possible is maintained an imputation attempt will be executed on the missing data. The plots below show the results of the imputation and show that there is less missing data in the data set. A couple of variables, x2 and x41, still maintain some missing data. Given the 1% impact, the final step will be to remove the missing data. Further investigation may be needed once a production model is chosen to build out the imputation of these specific variables. 
 
 ```{r, echo=FALSE,message=FALSE, warning=FALSE}
 # Below we use the MICE package to impute the missing values
 # Due to the size of the data, the number of iterations will be limited 
-#smallimp = tail(df, 1000)
-#imp = mice(smallimp, meth = "cart", minbucket = 5)
-#plot(imp)
-# imp$method
-# complete = mice::complete
-# plot_missing(mice::complete(imp, 1))
-
-imp = mice(df, method = "pmm", print = TRUE, minbucket = 2)
+imp = mice(df, method = "pmm", print = FALSE, minbucket = 2)
 plot(imp)
 imputed.df = mice::complete(imp, 1)
 imp$method
@@ -128,10 +125,8 @@ plot_missing(imputed.df[31:40],title = "Plot of Missing Values: 31 - 40")
 plot_missing(imputed.df[41:51],title = "Plot of Missing Values: 41 - 51")
 
 # pass to df
-# df = impted.df
+df = imputed.df
 ```
-
-The key data issue that needs to be addressed is the missing data. As previously noted there are 1466 missing values across the data set. It seems that the data is missing at random. This missing data approach provides flexibility in that missing data can be excluded from the observations. Attempts could be made to impute the missing data, however given that the missing data represents only 1% of the overall data set the initial approach will be to simply exclude the missing data from analysis.
 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
  df = na.omit(df)
@@ -156,6 +151,7 @@ Evaluating the discrete value plots indicates that variable x32 has been categor
  plot_bar(df,title="Bar Plots of Discrete Variables")
 ```
 Reviewing the continuous variables, variable x37 is now showing as a continuous variable which indicates that data correction has been completed. 
+
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
  plot_histogram(df,title="Bar Plots of Continuous Variables")
 ```
@@ -171,6 +167,7 @@ plot_correlation(df,type="discrete", title="Correlation Plot: Discrete Variables
 ```
 
 The plot below shows the correlation plot for the continuous variables. From the plot below there is high correlation between variables x2 and x6, as well as between x38 and x41. 
+
 ```{r, echo=FALSE,message=FALSE, warning=FALSE}
 plot_correlation(df,type="continuous", title="Correlation Plot: Continuous Variables")
 ```
@@ -192,8 +189,7 @@ print(paste("Test Set Size: " ,dim(test_df)[1]))
 
 Given that the problem provided is a binary classification problem there are multiple approaches that can be taken to model the problem. For this case K-Nearest Neighbor, Logistic Regression and Random Forest models will be executed. Each of these approaches are relatively quick to execute and the outputs are easily explainable.
 
-
-## KNN Modelling
+## KNN Modeling
 
 The K-Nearest Neighbor (KNN) modeling method method is an approached used for both classification and regression problems. In this particular case, KNN will be leveraged for the classification problem. In the classification execution, the model attempts to group values based on a weight provided identified as K. The K value tells the model how many neighbors to attempt to model against the dependent variable. For this implementation K = 15.
 
@@ -205,14 +201,14 @@ test_df_knn <- test_df[, -c(25,30,31)]
 # Execute KNN
 prc_test_pred <- knn(train = train_df_knn, test = test_df_knn, cl = train_df$y, k=15)
 ```
-The results of our KNN model is shown below. We compare the results from our predicted KNN model against the actual test values for our dependent variable. From it, we can see across a total of 31,696 observations (test set), we have a true positive of  of: 16,704 and a true negative of: 9,915 = for a total accuracy of 83.982%. Using KNN is limited for this data set as there were character columns omitted from the model due to limitations. Had those been factored in, we'd likely see a score increase. KNN is likely not the optimal modeling choice here, but is a good first pass to identify that our character columns may have some role to play in improving the accuracy of the model.
 
-The true cost of implementing this model, if selected, would be $22,580 + $1,409,500 = $1,432,080. This further substantiates that KNN is likely not the model of choice if this rate / cost due to false negatives and positives is prohibitive.
+The results of our KNN model is shown below. We compare the results from our predicted KNN model against the actual test values for our dependent variable. From it, we can see across a total of 31,984 observations (test set), we have a true positive of  of: 17,095 and a true negative of: 9,740 = for a total accuracy of 83.901%. Using KNN is limited for this data set as there were character columns omitted from the model due to limitations. Had those been factored in, we'd likely see a score increase. KNN is likely not the optimal modeling choice here, but is a good first pass to identify that our character columns may have some role to play in improving the accuracy of the model.
+
+The true cost of implementing this model, if selected, would be $22,800 + $1,434,500 = $1,457,300. This further substantiates that KNN is likely not the model of choice if this rate / cost due to false negatives and positives is prohibitive.
 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
 CrossTable(x=test_df$y, y = prc_test_pred, prop.chisq = FALSE)
 ```
-
 
 ## Logistic Regression
 
@@ -222,7 +218,7 @@ Logistic Regression is another approach to handling a classification problem. Lo
 logRegress = glm(formula= y~., family=binomial, data=train_df)
 ```
 
-The plot below shows the variable importance plot. The purpose of this plot is to show which variables have the most impact on the logistic regression analysis. In this case, the top 15 features are shown. As can be seen from the plot, the top 13 values have the most impact with X11 and x29Nov having minimal impact in comparison. 
+The plot below shows the variable importance plot. The purpose of this plot is to show which variables have the most impact on the logistic regression analysis. In this case, the top 15 features are shown. As can be seen from the plot, the x29 variable broken out by each month have the highest variable importance. 
 
 ```{r,echo=FALSE,message=FALSE,warning=FALSE}
 # get variable importance
@@ -242,7 +238,7 @@ ggtitle("Variable Importance: Logistic Regression") +
    theme_bw()
 ```
 
-Utilizing the confusion matrix below the accuracy of this model, across 31,696 observations is 70.45% (15,853 + 6,479)/31,696. Applying the Classification Cost penalty specified in the business requirements document, we have a total cost of implementation of: $30,950 + $3,134,500 = $3,165,450. This is higher than the KNN model demonstrated above and if this proves cost-prohibitive, another model may be the better choice.
+Utilizing the confusion matrix below the accuracy of this model, across 31,984 observations is 70.20% (15,943 + 6,510)/31,984. Applying the Classification Cost penalty specified in the business requirements document, we have a total cost of implementation of: $34,320 + $3,049,500 = $3,083,820. This is higher than the KNN model demonstrated above and if this proves cost-prohibitive, another model may be the better choice.
 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
 #Predict
@@ -251,6 +247,7 @@ predictLogRegress = predict(logRegress,test_df,type="response")
 #output the confusion matrix
 table(test_df$y,predictLogRegress >= 0.5)
 ```
+
 ## Basic Tree Model
 
 A Basic Tree Model is another approach that can be leveraged for classification problems. In a basic tree approach a series of "if-then" rules to generate a prediction. Tree Based Models are relatively fast to develop, similar to logistic regression. These types of models are also easily explainable in that the tree structure can be followed to understand the decision making process. Trees can be prone to over fitting if not managed correctly and thus need to be pruned to ensure a best fit model. 
@@ -261,19 +258,20 @@ model = rpart(formula=y~., data=train_df,method="class")
 fancyRpartPlot(model,caption="Initial Tree")
 ```
 
-The table below shows that the initial tree has an accuracy of 74.69%, lower than the KNN model but higher than the logistic regression model. Applying the Classification Cost penalty specified in the business requirements document, we have a total cost of implementation of: $43,100 + $1,855,500 = $1,898,600. This is higher than the Logistic Regression model demonstrated above and if this proves cost-prohibitive, another model may be the better choice.
+The table below shows that the initial tree has an accuracy of 74.21%, lower than the KNN model but higher than the logistic regression model. Applying the Classification Cost penalty specified in the business requirements document, we have a total cost of implementation of: $47,140 + $1,815,140 = $1,862,280. This is higher than the Logistic Regression model demonstrated above and if this proves cost-prohibitive, another model may be the better choice.
+
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
 predTest = predict(object=model, newdata=test_df, type="class")
 confusionMatrix(data=predTest, reference=as.factor(test_df$y))
 ```
 
-To help with any possible over fitting, the tree can be pruned. The method of pruning trees is a process that attempts to get our results to a more optimal tree by removing nodes in the tree and stopping at what the modeler deems is an acceptable stopping criteria. To determine what that stopping criteria could be, investigation of the error in the original tree is helpful. The plot below shows the cross validation error for each split that can be used to prune the tree. From the plot the cp equal to approximately 0.011 would be a good spot to prune the tree.
+To help with any possible over fitting, the tree can be pruned. The method of pruning trees is a process that attempts to get our results to a more optimal tree by removing nodes in the tree and stopping at what the modeler deems is an acceptable stopping criteria. To determine what that stopping criteria could be, investigation of the error in the original tree is helpful. The plot below shows the cross validation error for each split that can be used to prune the tree. From the plot the cp equal to approximately 0.014 would be a good spot to prune the tree.
 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
  plotcp(model)
 ```
 
-The pruned tree, below, looks very similar to the initial tree. This result is also confirmed by the confusion matrix results shown below. No change is seen between the initial tree and the pruned tree. This would result in the same cost calculation as the initil tree of $1,898,600.
+The pruned tree, below, looks very similar to the initial tree. This result is also confirmed by the confusion matrix results shown below. No change is seen between the initial tree and the pruned tree. This would result in the same cost calculation as the initial tree of $1,862,280.
 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
 pruneModel = prune(model, cp=model$cptable[which.min(model$cptable[,"xerror"]),"CP"])
@@ -294,7 +292,7 @@ rg <- ranger(y ~ ., data = train_df,classification=TRUE,importance='impurity')
 pred <- predict(rg, data = test_df)
 ```
 
-Just as with the Logistic Regression model, the Random Forest model will allow for evaluating which features had the greatest impact on the model development. In comparison of the two plots, features x5, x29, x31,x35 and x47 being having consistent impact across both models. This would indicate that upon further refinement of models these would be key features to ensure remained in any future models. 
+Just as with the Logistic Regression model, the Random Forest model will allow for evaluating which features had the greatest impact on the model development. In comparison of the two plots for Linear Regression and Random Forest, features x29 and x43 being having consistent impact across both models. This would indicate that upon further refinement of models these would be key features to ensure remained in any future models. 
 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
 rg_vi = rg$variable.importance
@@ -302,7 +300,7 @@ rg_vi = sort(rg_vi)
 barplot(head(rg_vi,15), horiz = TRUE, las = 1,main= "Variable Importance Plot: Random Forest")
 ```
 
-The table below shows that the Random Forest model with 500 trees has an accuracy of 92.70%, the highest of all models so far. Applying the Classification Cost penalty specified in the business requirements document, we have a total cost of implementation of: $8,050 + $739,500 = $747,550. This is lower than other models to this point and seems to indicate this may be a good first model for evaluation.
+The table below shows that the Random Forest model with 500 trees has an accuracy of 92.63% (1 - the OOB Prediction error) , the highest of all models so far. Applying the Classification Cost penalty specified in the business requirements document, we have a total cost of implementation of: $8,230 + $752,500 = $760,730. This is lower than other models to this point and seems to indicate this may be a good first model for evaluation.
 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
 rg
@@ -312,13 +310,13 @@ rg
 table(test_df$y,pred$predictions)
 ```
 
-```{r}
+```{r, echo=FALSE, message=FALSE, warning=FALSE,results='hide',output=FALSE}
 #NOTE - this takes about 30 minutes to run
 rg <- ranger(y ~ ., data = train_df,classification=TRUE,importance='impurity',num.trees = 1000)
 pred <- predict(rg, data = test_df)
-table(test_df$y,pred$predictions)
 ```
-The table below shows that the Random Forest model with 1,000 trees has an accuracy of 92.75% (1 - the OOB Prediction error), the highest of all models. Applying the Classification Cost penalty specified in the business requirements document, we have a total cost of implementation of: $8,050 + $739,500 = $747,550. This does not change from the Random Forest of 500 trees.Due to the number of trees this model does take much longer (approx. 20 minutes) to run compared to the 500 tree model (approx. 10 minutes). If speed of processing is a business requirement sacrificing 0.05% accuracy at the same Classification Cost penalty may be acceptable. 
+
+The table below shows that the Random Forest model with 1,000 trees has an accuracy of 92.69% (1 - the OOB Prediction error), the highest of all models. Applying the Classification Cost penalty specified in the business requirements document, we have a total cost of implementation of: $8,090 + $753,500 = $761,590. This less than a $1,000 difference from the Random Forest of 500 trees. Due to the number of trees, this model does take much longer (approx. 20 - 30 minutes) to run compared to the 500 tree model (approx. 10 minutes). If speed of processing is a business requirement sacrificing 0.06% accuracy at the same Classification Cost penalty may be acceptable. 
 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
 rg
@@ -327,7 +325,6 @@ rg
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
 table(test_df$y,pred$predictions)
 ```
-
 
 # Conclusion
 
@@ -337,14 +334,13 @@ In conclusion, this report has leveraged multiple classification methods to clas
 tabl = "
 | Method                     | Accuracy   | Classification Cost |
 |---------------|:----------:|-----------:|--------------------:|
-| K-Nearest Neighbor         |   83.982%  |    $1,442,960       |
-| Logistic Regression        |   70.45%   |    $3,165,450       |
-| Basic Tree                 |   74.69%   |    $1,898,600       |
-| Random Forest (500 trees)  |   92.70%   |    $747,550         |
-| Random Forest (1000 trees) |   92.75%   |    $747,550         |
+| K-Nearest Neighbor         |   83.90%   |    $1,457,300       |
+| Logistic Regression        |   70.20%   |    $3,083,820       |
+| Basic Tree                 |   74.21%   |    $1,862,280       |
+| Random Forest (500 trees)  |   92.63%   |    $760,730         |
+| Random Forest (1000 trees) |   92.69%   |    $761,590         |
 "
 cat(tabl) # output the table in a format good for HTML/PDF/docx conversion
 ```
 
-
-From these current modeling initiatives the Random Forest model seems to be the best model with the lowest Classification Cost penalty. If explainability of the model is of concern, this choice provides some good indicators but may be difficult to provide full transparency of the model if that is required. Thus another model with more transparency may be used, but could have a higher Classification Cost
+From these current modeling initiatives the Random Forest model seems to be the best model with the lowest Classification Cost penalty. If explainability of the model is of concern, this choice provides some good indicators but may be difficult to provide full transparency of the model if that is required. Thus another model with more transparency may be used, but could have a higher Classification Cost.
